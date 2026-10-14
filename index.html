@@ -186,7 +186,8 @@ tbody tr:hover{background:#F0F7FF}
 <body>
 <div class="container">
 <h1>IR Professional Data Analysis</h1>
-<div class="upload-zone" id="uploadZone"><div class="icon">📁</div><p>Click to upload or drag & drop CSV</p><input type="file" id="fileInput" accept=".csv"></div>
+<div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 18px"><div><div style="font-weight:700;font-size:.9em">Weekly Raw Archive</div><div style="font-size:.72em;color:#666;margin-top:2px">Download the week's <code>raw_data_xxxxx.csv</code> (week number in the file name) from WorkDocs, then upload it below. Suggested naming: <code>Raw_YYYY-Www.csv</code></div></div><a class="btn btn-p" href="https://amazon.awsapps.com/workdocs-amazon/index.html#/folder/01f7058ac637fe496472df8ff0a5f0b3cc601c3df6d65eceee65abcd19c6d735" target="_blank" rel="noopener" style="text-decoration:none">Open Weekly Raw Archive ↗</a></div>
+<div class="upload-zone" id="uploadZone"><div class="icon" id="uzIcon">📁</div><p id="uzText">Click to upload or drag & drop CSV</p><input type="file" id="fileInput" accept=".csv"></div>
 <div class="file-info" id="fileInfo"><span id="fileName"></span><span class="reset-btn" id="resetBtn">✕ Reset</span></div>
 <div class="mode-selector" id="modeSelector">
   <button class="btn-ic" id="btnIC">🔬 IC View</button>
@@ -255,11 +256,12 @@ function getMS(containerId){var list=document.querySelector('#drop_'+containerId
 document.addEventListener('click',function(){var drops=document.querySelectorAll('.ms-drop.open');for(var i=0;i<drops.length;i++){drops[i].classList.remove('open')}});
 // === Upload & Navigation ===
 var UZ=document.getElementById('uploadZone'),FI=document.getElementById('fileInput');
+function setUZ(icon,text){document.getElementById('uzIcon').textContent=icon;document.getElementById('uzText').textContent=text}
 UZ.onclick=function(){FI.click()};
 UZ.ondragover=function(e){e.preventDefault()};
 UZ.ondrop=function(e){e.preventDefault();handleFile(e.dataTransfer.files[0])};
 FI.onchange=function(e){if(e.target.files[0])handleFile(e.target.files[0])};
-document.getElementById('resetBtn').onclick=function(){rawData=[];document.getElementById('fileInfo').style.display='none';document.getElementById('modeSelector').style.display='none';document.getElementById('dashboard').style.display='none';document.getElementById('mgmt-dashboard').style.display='none';UZ.style.display='block'};
+document.getElementById('resetBtn').onclick=function(){rawData=[];document.getElementById('fileInfo').style.display='none';document.getElementById('modeSelector').style.display='none';document.getElementById('dashboard').style.display='none';document.getElementById('mgmt-dashboard').style.display='none';setUZ('📁','Click to upload or drag & drop CSV');FI.value='';UZ.style.display='block'};
 document.getElementById('btnIC').onclick=function(){document.getElementById('modeSelector').style.display='none';renderIC()};
 document.getElementById('btnMgmt').onclick=function(){document.getElementById('modeSelector').style.display='none';renderMgmt()};
 document.getElementById('backIC').onclick=function(){document.getElementById('dashboard').style.display='none';document.getElementById('modeSelector').style.display='block'};
@@ -267,11 +269,11 @@ document.getElementById('backMgmt').onclick=function(){document.getElementById('
 
 function handleFile(f){
   if(!f||!f.name.endsWith('.csv')){alert('Please upload a CSV file');return}
-  document.getElementById('uploadZone').innerHTML='<div class="icon">⏳</div><p>Processing '+f.name+'...</p>';
+  setUZ('⏳','Processing '+f.name+'...');
   var reader=new FileReader();
   reader.onload=function(e){
     rawData=parseCSV(e.target.result);
-    if(!rawData.length){alert('Parse failed');document.getElementById('uploadZone').innerHTML='<div class="icon">📁</div><p>Click to upload or drag & drop CSV</p>';return}
+    if(!rawData.length){alert('Parse failed');setUZ('📁','Click to upload or drag & drop CSV');FI.value='';return}
     var cols=Object.keys(rawData[0]);
     // Flexible column matching: find columns by keywords regardless of naming changes
     function findCol(keywords,exclude){
@@ -328,7 +330,7 @@ function handleFile(f){
       row['Recommendation Open Date']=row[recOpenCol]||'';
       if(d)parsed++;
     });
-    document.getElementById('fileName').textContent='📄 '+f.name+' — '+rawData.length+' rows ('+parsed+' dates)';
+    var wkM=f.name.match(/(?:(?:week|wk)|(?:^|[^a-z])w)[\s_\-]?(\d{1,2})(?:\s*-\s*(\d{1,2}))?(?!\d)/i);var wkTag=wkM?' | Week: W'+wkM[1]+(wkM[2]?'-W'+wkM[2]:''):'';document.getElementById('fileName').textContent='📄 '+f.name+' — '+rawData.length+' rows ('+parsed+' dates)'+wkTag;
     UZ.style.display='none';
     document.getElementById('fileInfo').style.display='block';
     document.getElementById('modeSelector').style.display='block';
@@ -788,13 +790,13 @@ function renderMgmt(){
       var tw=calcMetrics(twRows2,new Date(2000,0,1),new Date(2100,0,1));
       var lw=hasWow?calcMetrics(lwRows2,new Date(2000,0,1),new Date(2100,0,1)):{cADR:0,rADR:0,dep:0,opR:0,opA:0,tC:0,aC:0,tR:0,aR:0};
       // NCC/OPT: same week as tw (reporting week)
-      var no=calcNccOpt(twRows2);
+      var no=calcNccOpt(twRows2);var lwNo=hasWow?calcNccOpt(lwRows2):null;
       // Forecast from global data
       var fcRows=hasForecast?allRows.filter(function(r){return r['_wkSat']&&r['_wkSat']>pD(twSatKey)}):[];
       var wNo=calcNccOpt(fcRows);
       var wRecs={};fcRows.forEach(function(r){var rid=r['_rid'];if(!rid)return;if(!wRecs[rid])wRecs[rid]=0;if(r['_af']===1)wRecs[rid]=1});
       var wTR=Object.keys(wRecs).length,wAR=objVals(wRecs).filter(function(v){return v===1}).length;
-      regData[reg]={qtd:qtd,tw:tw,lw:lw,no:no,wowC:hasWow?(tw.cADR-lw.cADR)*1e4:0,wowR:hasWow?(tw.rADR-lw.rADR)*1e4:0,wowDep:hasWow?(tw.dep-lw.dep)*1e4:0,wNo:wNo,wTR:wTR,wAR:wAR};
+      regData[reg]={qtd:qtd,tw:tw,lw:lw,no:no,lwNo:lwNo,wowC:hasWow?(tw.cADR-lw.cADR)*1e4:0,wowR:hasWow?(tw.rADR-lw.rADR)*1e4:0,wowDep:hasWow?(tw.dep-lw.dep)*1e4:0,wNo:wNo,wTR:wTR,wAR:wAR};
     });
     var twSat=new Date(twEnd.getTime()-864e5),lwSat=new Date(lwEnd.getTime()-864e5);
     var mh='<p style="font-size:.78em;color:#666;margin-bottom:12px">Data: '+fmt(mMinD)+' → '+fmt(mMaxD)+' | '+data.length+' rows';
@@ -857,10 +859,11 @@ function renderMgmt(){
     mh+='</tbody></table></div>';
     // NCC vs OPT with proportions
     var tNcc=0,tOpt=0;regs.forEach(function(r){tNcc+=regData[r].no.ncc.del;tOpt+=regData[r].no.opt.del});var tAll=tNcc+tOpt;
-    mh+='<div class="card"><h3>NCC vs OPT — Rec Level</h3><table><thead><tr><th>Region</th><th>Type</th><th>Delivered Recs</th><th>Implemented Recs</th><th>IR</th><th>NCC/OPT</th><th>Region %</th></tr></thead><tbody>';
+    var wC=' class="nwc"';var wTd=function(cur,prev){if(!prev)return'<td'+wC+'>—</td><td'+wC+'>—</td>';var w=(cur.adr-prev.adr)*1e4;return'<td'+wC+'>'+pct(prev.adr)+'</td><td'+wC+'><span class="'+bCls(w)+'">'+bStr(w)+'</span></td>'};
+    mh+='<div class="card" id="nccRecCard"'+(window._nccWow?'':' data-nowow="1"')+'><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">NCC vs OPT — Rec Level</h3>'+(hasWow?'<label style="font-size:.78em;color:#666;display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="nccWowTgl"'+(window._nccWow?' checked':'')+' style="accent-color:var(--r-apac)"> Show WoW ('+twWk+' vs '+lwWk+')</label>':'')+'</div><style>#nccRecCard[data-nowow] .nwc{display:none}</style><table><thead><tr><th>Region</th><th>Type</th><th>Delivered Recs</th><th>Implemented Recs</th><th>IR</th><th'+wC+'>LW IR</th><th'+wC+'>IR WoW</th><th>NCC/OPT</th><th>Region %</th></tr></thead><tbody>';
     regs.forEach(function(reg){var d=regData[reg].no;var rt=d.ncc.del+d.opt.del;var np=rt>0?(d.ncc.del/rt*100).toFixed(0):'0';var op2=rt>0?(d.opt.del/rt*100).toFixed(0):'0';var rs=tAll>0?(rt/tAll*100).toFixed(1):'0';
-      mh+='<tr><td>'+regSpan(reg)+'</td><td><span class="badge-ncc">NCC</span></td><td>'+d.ncc.del+'</td><td>'+d.ncc.adp+'</td><td>'+pct(d.ncc.adr)+'</td><td rowspan="2" style="text-align:center;vertical-align:middle"><span style="color:#6366F1;font-weight:700">'+np+'%</span> / <span style="color:#EA580C;font-weight:700">'+op2+'%</span></td><td rowspan="2" style="text-align:center;vertical-align:middle;font-weight:700">'+rs+'%</td></tr>';
-      mh+='<tr><td>'+regSpan(reg)+'</td><td><span class="badge-opt">OPT</span></td><td>'+d.opt.del+'</td><td>'+d.opt.adp+'</td><td>'+pct(d.opt.adr)+'</td></tr>'});
+      mh+='<tr><td>'+regSpan(reg)+'</td><td><span class="badge-ncc">NCC</span></td><td>'+d.ncc.del+'</td><td>'+d.ncc.adp+'</td><td>'+pct(d.ncc.adr)+'</td>'+wTd(d.ncc,regData[reg].lwNo&&regData[reg].lwNo.ncc)+'<td rowspan="2" style="text-align:center;vertical-align:middle"><span style="color:#6366F1;font-weight:700">'+np+'%</span> / <span style="color:#EA580C;font-weight:700">'+op2+'%</span></td><td rowspan="2" style="text-align:center;vertical-align:middle;font-weight:700">'+rs+'%</td></tr>';
+      mh+='<tr><td>'+regSpan(reg)+'</td><td><span class="badge-opt">OPT</span></td><td>'+d.opt.del+'</td><td>'+d.opt.adp+'</td><td>'+pct(d.opt.adr)+'</td>'+wTd(d.opt,regData[reg].lwNo&&regData[reg].lwNo.opt)+'</tr>'});
     mh+='</tbody></table><div class="grid-2" style="margin-top:14px"><div style="height:250px"><canvas id="nccOptChart"></canvas></div><div style="height:250px"><canvas id="regShareChart"></canvas></div></div></div>';
     // Forecast (only show when in 'all' mode)
     if(hasForecast){
@@ -904,6 +907,7 @@ function renderMgmt(){
     var fcCanvas=document.getElementById('fcChart');
     if(fcCanvas&&hasForecast){var fcAllTotal=0;regs.forEach(function(r){fcAllTotal+=regData[r].wNo.ncc.del+regData[r].wNo.opt.del});
     charts.fc=new Chart(fcCanvas,{type:'bar',data:{labels:regs,datasets:[{label:'NCC Delivered',data:regs.map(function(r){return regData[r].wNo.ncc.del}),backgroundColor:'#C7D2FE'},{label:'NCC Implemented',data:regs.map(function(r){return regData[r].wNo.ncc.adp}),backgroundColor:'#6366F1'},{label:'OPT Delivered',data:regs.map(function(r){return regData[r].wNo.opt.del}),backgroundColor:'#FED7AA'},{label:'OPT Implemented',data:regs.map(function(r){return regData[r].wNo.opt.adp}),backgroundColor:'#EA580C'}]},options:{maintainAspectRatio:false,scales:{y:{beginAtZero:true}},plugins:{legend:{position:'top'},tooltip:{callbacks:{label:function(ctx){var v=ctx.parsed.y;var pv=fcAllTotal>0?(v/fcAllTotal*100).toFixed(1)+'%':'';return ctx.dataset.label+': '+v+' ('+pv+')'}}}}}})}
+    var nwT=document.getElementById('nccWowTgl');if(nwT)nwT.onchange=function(){window._nccWow=this.checked;var c=document.getElementById('nccRecCard');if(this.checked)c.removeAttribute('data-nowow');else c.setAttribute('data-nowow','1')};
     document.getElementById('expMgmt').onclick=function(){dlCSV([['Region',qLabel,'WkCase','CaseWoW','WkRec','RecWoW','Depth','DepthWoW','Open','OpenedCaseIR']].concat(regs.map(function(r){var d=regData[r];return[r,pct(d.qtd.cADR),pct(d.tw.cADR),d.wowC.toFixed(0),pct(d.tw.rADR),d.wowR.toFixed(0),pct(d.tw.dep),d.wowDep.toFixed(0),pct(d.tw.opR),pct(d.tw.opA)]})),'mgmt_performance.csv')};
   }
   buildMain();
