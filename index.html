@@ -341,9 +341,10 @@ function handleFile(f){
 // === Shared Calc Functions (optimized with pre-computed fields) ===
 function calcMetrics(data,d0,d1){
   var cs={},recs={},i,r,cid,rid,c;
+  var ncD=0,ncA=0; // line items on rows without a Case ID — included in depth like the IR DB
   var touchedAccts={};
   for(i=0;i<data.length;i++){r=data[i];if(!r['_date']||r['_date']<d0||r['_date']>=d1)continue;
-    cid=r['_cid'];if(cid){if(!cs[cid])cs[cid]={f:0,op:false,dli:0,ali:0,acct:r['SF Account ID']||''};c=cs[cid];if(r['_caf']===1)c.f=1;if(r['Recommendation Open Date'])c.op=true;c.dli+=r['_dli'];c.ali+=r['_ali']}
+    cid=r['_cid'];if(cid){if(!cs[cid])cs[cid]={f:0,op:false,dli:0,ali:0,acct:r['SF Account ID']||''};c=cs[cid];if(r['_caf']===1)c.f=1;if(r['Recommendation Open Date'])c.op=true;c.dli+=r['_dli'];c.ali+=r['_ali']}else if(r['_caf']===1){ncD+=r['_dli'];ncA+=r['_ali']}
     rid=r['_rid'];if(rid){if(!recs[rid])recs[rid]=0;if(r['_af']===1)recs[rid]=1}
     var aid=r['SF Account ID'];if(aid)touchedAccts[aid]=true;
   }
@@ -383,6 +384,7 @@ function calcMetrics(data,d0,d1){
     }
   }
   var tC=0,aC=0,dA=0,dD=0,opC=0,opAC=0,adoptedAccts={};
+  dD+=ncD;dA+=ncA;
   for(cid in cs){c=cs[cid];tC++;if(c.f===1){aC++;dA+=c.ali;dD+=c.dli;if(c.acct)adoptedAccts[c.acct]=true}if(c.op){opC++;if(c.f===1)opAC++}}
   var tR=0,aR=0;for(rid in recs){tR++;if(recs[rid]===1)aR++}
   var tCdisplay=tC+rptCaseCnt;
@@ -921,7 +923,7 @@ function renderMgmt(){
     var weeks=Object.keys(weekMap).sort().filter(function(w){return weekMap[w].start.getFullYear()>=2026});var qM2=Math.floor(T.getMonth()/3)*3,qS2=new Date(T.getFullYear(),qM2,1);
     if(!tFrom||!tTo){if(range==='Q')weeks=weeks.filter(function(w){return weekMap[w].start>=qS2});else if(range!=='all'){var n=parseInt(range);weeks=weeks.slice(-n)}}
     var rc={APAC:'#1D4ED8',INT:'#047857',US:'#B45309'};
-    var ds=regs.map(function(reg){var dd=weeks.map(function(wk){var rows=weekMap[wk].rows.filter(function(r){return r['_reg']===reg});if(!rows.length)return null;if(metric==='case'){var c2={};rows.forEach(function(r){var cid=r['_cid'];if(!cid)return;if(!c2[cid])c2[cid]=0;if(r['_caf']===1)c2[cid]=1});var t=Object.keys(c2).length,a=objVals(c2).filter(function(v){return v===1}).length;return t>0?(a/t*100):null}else if(metric==='rec'){var r2={};rows.forEach(function(r){var rid=r['Recommendation ID'];if(!rid)return;if(!r2[rid])r2[rid]=0;if(r['_af']===1)r2[rid]=1});var t2=Object.keys(r2).length,a2=objVals(r2).filter(function(v){return v===1}).length;return t2>0?(a2/t2*100):null}else{var c3={};rows.forEach(function(r){var cid=r['_cid'];if(!cid)return;if(!c3[cid])c3[cid]={f:0,del:0,adp:0};if(r['_caf']===1)c3[cid].f=1;c3[cid].del+=r['_dli'];c3[cid].adp+=r['_ali']});var dA2=0,dD2=0;objVals(c3).filter(function(c){return c.f===1}).forEach(function(c){dA2+=c.adp;dD2+=c.del});return dD2>0?(dA2/dD2*100):null}});return{label:reg,data:dd,borderColor:rc[reg],backgroundColor:rc[reg]+'20',tension:0.3,fill:false,pointRadius:3,pointHoverRadius:6,borderWidth:2.5}});
+    var ds=regs.map(function(reg){var dd=weeks.map(function(wk){var rows=weekMap[wk].rows.filter(function(r){return r['_reg']===reg});if(!rows.length)return null;if(metric==='case'){var c2={};rows.forEach(function(r){var cid=r['_cid'];if(!cid)return;if(!c2[cid])c2[cid]=0;if(r['_caf']===1)c2[cid]=1});var t=Object.keys(c2).length,a=objVals(c2).filter(function(v){return v===1}).length;return t>0?(a/t*100):null}else if(metric==='rec'){var r2={};rows.forEach(function(r){var rid=r['Recommendation ID'];if(!rid)return;if(!r2[rid])r2[rid]=0;if(r['_af']===1)r2[rid]=1});var t2=Object.keys(r2).length,a2=objVals(r2).filter(function(v){return v===1}).length;return t2>0?(a2/t2*100):null}else{var c3={},nc3={f:1,del:0,adp:0};rows.forEach(function(r){var cid=r['_cid'];if(!cid){if(r['_caf']===1){nc3.del+=r['_dli'];nc3.adp+=r['_ali']}return}if(!c3[cid])c3[cid]={f:0,del:0,adp:0};if(r['_caf']===1)c3[cid].f=1;c3[cid].del+=r['_dli'];c3[cid].adp+=r['_ali']});var dA2=nc3.adp,dD2=nc3.del;objVals(c3).filter(function(c){return c.f===1}).forEach(function(c){dA2+=c.adp;dD2+=c.del});return dD2>0?(dA2/dD2*100):null}});return{label:reg,data:dd,borderColor:rc[reg],backgroundColor:rc[reg]+'20',tension:0.3,fill:false,pointRadius:3,pointHoverRadius:6,borderWidth:2.5}});
     if(charts.trend)charts.trend.destroy();
     charts.trend=new Chart(document.getElementById('trendChart'),{type:'line',data:{labels:weeks.map(function(w){var ws=weekMap[w].start;var wn=getWeek(ws);return wn+' ('+w.slice(5)+')'}),datasets:ds},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{y:{beginAtZero:true,max:100,title:{display:true,text:metric==='case'?'Case IR %':metric==='rec'?'Rec IR %':'Depth %'}},x:{title:{display:true,text:'Week (Sun-Sat)'}}},plugins:{legend:{position:'top'},tooltip:{callbacks:{title:function(ctx){var i=ctx[0].dataIndex;var ws=weekMap[weeks[i]].start;var we=new Date(ws.getTime()+6*864e5);return getWeek(ws)+': '+fmt(ws).slice(5)+' → '+fmt(we).slice(5)},label:function(ctx){return ctx.dataset.label+': '+(ctx.parsed.y!==null?ctx.parsed.y.toFixed(1)+'%':'N/A')}}}}}});
   }
