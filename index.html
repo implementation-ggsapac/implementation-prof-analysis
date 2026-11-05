@@ -1149,17 +1149,23 @@ function renderMgmt(){
         var pa=(r['Publisher Alias']||'').toLowerCase();
         if(pa&&r['AST M2 Name'])paM2[pa]=r['AST M2 Name'];
       });
-      // Second pass: apply M1 mapping + fill empty M1/M2
+      // Most common M2 per M1 (before remapping) — a remapped AST moves under its new M1's M2
+      var m1M2={},m1M2c={};rawData.forEach(function(r){var a=r['AST M1 Name'],b=r['AST M2 Name'];if(a&&b){var c=m1M2c[a]=m1M2c[a]||{};c[b]=(c[b]||0)+1}});
+      Object.keys(m1M2c).forEach(function(a){var best=null,bn=0;for(var b in m1M2c[a])if(m1M2c[a][b]>bn){bn=m1M2c[a][b];best=b}m1M2[a]=best});
+      var m2Moved=0;
+      // Second pass: apply M1 mapping + move M2 with the new M1 + fill empty M1/M2
       rawData.forEach(function(r){
         var pa=(r['Publisher Alias']||'').toLowerCase();
+        var oldM1=r['AST M1 Name'];
         if(map[pa])r['AST M1 Name']=map[pa];
+        if(map[pa]&&map[pa]!==oldM1&&m1M2[map[pa]]&&r['AST M2 Name']!==m1M2[map[pa]]){r['AST M2 Name']=m1M2[map[pa]];m2Moved++}
         if(pa&&!r['AST M2 Name']&&paM2[pa])r['AST M2 Name']=paM2[pa];
         if(pa&&!r['AST M1 Name']){
           // Also backfill empty M1 from other rows of same Publisher Alias
           var m1FromMap=map[pa];if(m1FromMap)r['AST M1 Name']=m1FromMap;
         }
       });
-      var msg='Loaded '+Object.keys(map).length+' mappings ('+matched+' matched).';
+      var msg='Loaded '+Object.keys(map).length+' mappings ('+matched+' matched); M2 updated on '+m2Moved+' rows.';
       if(unmatched.length){var uq=[];for(var i=0;i<unmatched.length;i++){if(uq.indexOf(unmatched[i])<0)uq.push(unmatched[i])}msg+=' Unmatched M1s: '+uq.join(', ')}
       document.getElementById('mappingStatus').textContent=msg;
       document.getElementById('mappingStatus').style.color=unmatched.length?'#D97706':'#059669';
@@ -1341,7 +1347,7 @@ var SC_GENERIC_AE=/^cbgpm$/i; // shared Cross Border GPM alias — not an indivi
 function scEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function scCardHtml(){
   return '<div class="card" id="scCard" style="border-left:4px solid var(--t-opt)"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Sales Collaboration Tracker</h3><span style="font-size:.72em;color:#999">Weekly follow-up progress with Sales / GPM during an event — case-level IR by week, Sales Team and GPM</span></div>'+
-    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:.8em"><strong style="color:#666">GPM Calibration:</strong><input type="file" id="scMapFile" accept=".csv"><button class="btn btn-s" id="scMapTpl">Download Templates</button><button class="btn btn-s" id="scMapClear">Clear</button><span id="scMapStatus" style="color:#999">Optional — GPM comes from AE Alias / AE Name / AE M1 Name; upload to override by SF Account ID or GPM login</span></div>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:.8em"><strong style="color:#666">GPM Calibration:</strong><input type="file" id="scMapFile" accept=".csv"><button class="btn btn-s" id="scMapTpl">Download Template</button><button class="btn btn-s" id="scMapClear">Clear</button><span id="scMapStatus" style="color:#999">Optional — GPM comes from AE Alias / AE Name / AE M1 Name; upload SF Account ID / GPM / GPM M1 to override</span></div>'+
     '<div class="dd-filters" id="scFilters" style="margin-top:10px"></div>'+
     '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.82em;margin-bottom:12px"><label style="font-weight:600;color:#666">Period:</label><select id="scMode" style="'+SC_IN+'"><option value="date">Event period</option><option value="week">Single week</option></select><span id="scDateWrap"><input type="date" id="scFrom" style="'+SC_IN+'"> to <input type="date" id="scTo" style="'+SC_IN+'"></span><select id="scWk" style="'+SC_IN+';display:none"></select><label style="font-weight:600;color:#666">Market:</label><select id="scMkt" style="'+SC_IN+'"><option value="all">All</option><option value="nonjp">Non-JP</option><option value="jp">JP only</option></select><button class="btn btn-v" id="scApply">Generate</button><button class="btn btn-g" id="scExpPivot">Export Pivot CSV</button><button class="btn btn-g" id="scExpOpen">Export Not-Implemented CSV</button><button class="btn btn-s" id="scPdf">📄 Full Report PDF</button></div>'+
     '<div id="scResults"><p style="color:#999;text-align:center;font-size:.85em">Set the event period and click Generate</p></div></div>';
@@ -1350,29 +1356,29 @@ function scColOf(re){var ks=rawData.length?Object.keys(rawData[0]):[];for(var i=
 function scSetMapStatus(t,c){var s=document.getElementById('scMapStatus');if(s){s.textContent=t;s.style.color=c||'#999'}}
 function initCollab(){
   // GPM calibration (kept in localStorage so it only has to be uploaded once)
-  if(!window._gpmMap&&!window._gpmLoginMap){try{var sv=localStorage.getItem('irpda_gpm_map');if(sv){sv=JSON.parse(sv);if(sv&&(sv.acct||sv.login)){window._gpmMap=sv.acct||null;window._gpmLoginMap=sv.login||null}else window._gpmMap=sv}}catch(e){}}
-  if(window._gpmMap||window._gpmLoginMap)scSetMapStatus('Calibration loaded: '+Object.keys(window._gpmMap||{}).length+' accounts, '+Object.keys(window._gpmLoginMap||{}).length+' logins (saved from last upload).','#059669');
+  if(!window._gpmCal){try{var sv=JSON.parse(localStorage.getItem('irpda_gpm_cal')||'null');if(sv&&sv.acct)window._gpmCal=sv}catch(e){}}
+  if(window._gpmCal)scSetMapStatus('Calibration loaded: '+window._gpmCal.rows+' accounts (saved from last upload).','#059669');
   document.getElementById('scMapFile').onchange=function(e){
     var f=e.target.files[0];if(!f)return;
     var reader=new FileReader();reader.onload=function(ev){
       var rows=parseCSV(ev.target.result);if(!rows.length){alert('Invalid CSV');return}
-      var cols=Object.keys(rows[0]),idC=null,nC=null,mC=null,lgC=null;
+      // Calibration rows: SF Account ID, GPM, GPM M1
+      var cols=Object.keys(rows[0]),idC=null,nC=null,mC=null;
       cols.forEach(function(c){var l=c.toLowerCase();
-        if(!idC&&(l.indexOf('account id')>=0||l.indexOf('longid')>=0||l==='account'))idC=c;
-        else if(!lgC&&(l.indexOf('login')>=0||l.indexOf('alias')>=0))lgC=c;
+        if(!idC&&(l.indexOf('account')>=0||l.indexOf('longid')>=0)&&l.indexOf('name')<0)idC=c;
         else if(!mC&&(/\bm1\b/.test(l)||l.indexOf('manager')>=0))mC=c;
-        else if(!nC&&(l.indexOf('gpm')>=0||l.indexOf('name')>=0)&&l.indexOf('account')<0)nC=c});
-      if(!idC&&!lgC){alert('CSV must have an SF Account ID column or a GPM Login column');return}
-      var map={},lmap={};rows.forEach(function(r){var n=nC?(r[nC]||'').trim():'',lg=lgC?(r[lgC]||'').trim():'',m=mC?(r[mC]||'').trim():'';
-        if(idC){var id=(r[idC]||'').trim();if(id&&(n||lg))map[id]={n:n||lg,m:m}}
-        else if(lg)lmap[lg.toLowerCase()]={n:n||lg,m:m}});
-      window._gpmMap=idC?map:null;window._gpmLoginMap=idC?null:lmap;
-      try{localStorage.setItem('irpda_gpm_map',JSON.stringify({acct:window._gpmMap,login:window._gpmLoginMap}))}catch(e){}
-      scSetMapStatus('Calibration loaded: '+(idC?Object.keys(map).length+' accounts':Object.keys(lmap).length+' GPM logins')+(mC?' with GPM M1':'')+'.','#059669');
+        else if(!nC&&l.indexOf('gpm')>=0)nC=c});
+      if(!idC||!nC){alert('CSV needs columns: SF Account ID, GPM, GPM M1');return}
+      var gm1={};rows.forEach(function(r){var g=(r[nC]||'').trim(),m=mC?(r[mC]||'').trim():'';if(g&&m&&!gm1[g])gm1[g]=m});
+      var acct={},dup=0;rows.forEach(function(r){var id=(r[idC]||'').trim(),g=(r[nC]||'').trim();if(!id||!g)return;
+        if(acct[id]){if(acct[id].n!==g)dup++;return}acct[id]={n:g,m:(mC&&(r[mC]||'').trim())||gm1[g]||''}});
+      window._gpmCal={acct:acct,rows:Object.keys(acct).length};
+      try{localStorage.setItem('irpda_gpm_cal',JSON.stringify(window._gpmCal))}catch(e){}
+      scSetMapStatus('Calibration loaded: '+Object.keys(acct).length+' accounts → GPM'+(mC?' → GPM M1':'')+'.'+(dup?' '+dup+' rows gave a 2nd GPM for the same account — first one kept.':''),dup?'#D97706':'#059669');
     };reader.readAsText(f);
   };
-  document.getElementById('scMapTpl').onclick=function(){dlCSV([['SF Account ID','SF Account Name','GPM Name','GPM M1'],['0011E00001iYPZtQAO','TAILI Store - UK','Easter Peng','Scarlett Yu']],'gpm_calibration_by_account_template.csv');dlCSV([['GPM Login','GPM Name','GPM M1'],['eastpeng','Easter Peng','Scarlett Yu']],'gpm_calibration_by_login_template.csv')};
-  document.getElementById('scMapClear').onclick=function(){window._gpmMap=null;window._gpmLoginMap=null;try{localStorage.removeItem('irpda_gpm_map')}catch(e){}document.getElementById('scMapFile').value='';scSetMapStatus('GPM calibration cleared.','#D97706')};
+  document.getElementById('scMapTpl').onclick=function(){dlCSV([['SF Account ID','GPM Name','GPM M1'],['0011E00001iYPZtQAO','Easter Peng','Scarlett Yu']],'gpm_calibration_template.csv')};
+  document.getElementById('scMapClear').onclick=function(){window._gpmCal=null;try{localStorage.removeItem('irpda_gpm_cal');localStorage.removeItem('irpda_gpm_map')}catch(e){}document.getElementById('scMapFile').value='';scSetMapStatus('GPM calibration cleared.','#D97706')};
 
   // Scope filters
   var defs=[{id:'scReg',col:'AST Region',label:'Region'},{id:'scM2',col:'AST M2 Name',label:'AST M2'},{id:'scAE',col:'AE Alias',label:'AE Alias (GPM)'},{id:'scCB',col:'Cross Border?',label:'Cross Border?'},{id:'scST',col:'Sales Team',label:'Sales Team'}];
@@ -1411,11 +1417,10 @@ function scCases(rows,adCol){
     if(!c.rg&&r['AE Alias'])c.rg=r['AE Alias'];if(!c.rgn&&r['AE Name'])c.rgn=r['AE Name'];if(!c.rgm&&r['AE M1 Name'])c.rgm=r['AE M1 Name'];
     if(r['_date']&&(!c.del||r['_date']<c.del)){c.del=r['_date'];c.wk=r['_wkSat']?fmt(r['_wkSat']):null}
     if(adCol&&r['_af']===1){var ad=pD(r[adCol]||'');if(ad&&(!c.imp||ad<c.imp))c.imp=ad}});
-  // GPM = AE Alias / AE Name / AE M1 Name from raw; calibration (by account, then by login) overrides
-  var map=window._gpmMap,lmap=window._gpmLoginMap,list=objVals(cs);
-  list.forEach(function(c){var g=map&&map[c.aid],lg=c.rg&&lmap&&lmap[String(c.rg).toLowerCase()];c.src='none';
+  // GPM = AE Alias / AE Name / AE M1 Name from raw; calibration by SF Account ID overrides
+  var cal=window._gpmCal,list=objVals(cs);
+  list.forEach(function(c){var g=cal&&cal.acct[c.aid];c.src='none';
     if(g){c.gpm=g.n;c.gm1=g.m||'(No M1)';c.src='cal'}
-    else if(lg){c.gpm=lg.n;c.gm1=lg.m||c.rgm||'(No M1)';c.src='cal'}
     else if(c.rg&&!SC_GENERIC_AE.test(c.rg)){c.gpm=c.rgn||c.rg;c.gm1=c.rgm||'(No M1)';c.src='raw'}
     else{c.gpm='(Unmapped'+(c.rg?': '+c.rg:'')+')';c.gm1='(Unmapped)'}});
   return list;
@@ -1481,14 +1486,13 @@ function runCollab(){
   var wkHead=wkCols.map(function(k){return'<th>'+wkLbl(k)+'</th>'}).join('');
   var mtxCells=function(g){var cells='';wkCols.forEach(function(k){var s=g.w[k];cells+=s?'<td title="'+s.a+'/'+s.n+'" style="background:'+scIrBg(s.ir)+'">'+pct(s.ir)+'</td>':'<td style="color:#ccc">—</td>'});return cells};
   var lastDelta=function(g){if(wkCols.length<2)return scBps(g.ir,g.b?g.b.ir:null);var a=g.w[wkCols[wkCols.length-1]],b=g.w[wkCols[wkCols.length-2]];return a&&b?scBps(a.ir,b.ir):'<span style="color:#999">—</span>'};
-  var dHead=wkCols.length>1?'Latest WoW':'vs Pre-event';
-  h+='<div class="sc-sec" id="scSecSt">'+scSecHead('scSecSt','By Sales Team','weekly IR, event total and change')+'<div style="height:'+Math.max(160,st.length*34+60)+'px;margin-bottom:10px"><canvas id="scStChart"></canvas></div><div style="overflow:auto"><table><thead><tr><th>Sales Team</th>'+wkHead+'<th>Cases</th><th>Impl.</th><th>Not Impl.</th><th>Event IR</th><th>Pre-event IR</th><th>vs Pre</th><th>'+dHead+'</th></tr></thead><tbody>';
-  st.forEach(function(g){h+='<tr><td><strong>'+scEsc(g.k)+'</strong></td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a)+'</td><td style="font-weight:700">'+pct(g.ir)+'</td><td>'+(g.b?pct(g.b.ir):'—')+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td><td>'+lastDelta(g)+'</td></tr>'});
-  h+='<tr style="font-weight:700;background:#F8FAFC"><td>Total</td>'+wkCols.map(function(k){return'<td>'+pct(byWk[k].ir)+'</td>'}).join('')+'<td>'+tot.n+'</td><td>'+tot.a+'</td><td>'+(tot.n-tot.a)+'</td><td>'+pct(tot.ir)+'</td><td>'+(bt.n?pct(bt.ir):'—')+'</td><td>'+scBps(tot.ir,bt.n?bt.ir:null)+'</td><td>'+(latestWow!==null&&wkCols.length>1?scBps(byWk[lastW].ir,byWk[prevW].ir):'')+'</td></tr></tbody></table></div></div>';
+  h+='<div class="sc-sec" id="scSecSt">'+scSecHead('scSecSt','By Sales Team','weekly IR, event total and change')+'<div style="height:'+Math.max(160,st.length*34+60)+'px;margin-bottom:10px"><canvas id="scStChart"></canvas></div><div style="overflow:auto"><table><thead><tr><th>Sales Team</th>'+wkHead+'<th>Cases</th><th>Impl.</th><th>Not Impl.</th><th>Event IR</th><th>Pre-event IR</th><th>vs Pre</th>'+(wkCols.length>1?'<th>Latest WoW</th>':'')+'</tr></thead><tbody>';
+  st.forEach(function(g){h+='<tr><td><strong>'+scEsc(g.k)+'</strong></td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a)+'</td><td style="font-weight:700">'+pct(g.ir)+'</td><td>'+(g.b?pct(g.b.ir):'—')+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(g)+'</td>':'')+'</tr>'});
+  h+='<tr style="font-weight:700;background:#F8FAFC"><td>Total</td>'+wkCols.map(function(k){return'<td>'+pct(byWk[k].ir)+'</td>'}).join('')+'<td>'+tot.n+'</td><td>'+tot.a+'</td><td>'+(tot.n-tot.a)+'</td><td>'+pct(tot.ir)+'</td><td>'+(bt.n?pct(bt.ir):'—')+'</td><td>'+scBps(tot.ir,bt.n?bt.ir:null)+'</td>'+(wkCols.length>1?'<td>'+(latestWow!==null?scBps(byWk[lastW].ir,byWk[prevW].ir):'')+'</td>':'')+'</tr></tbody></table></div></div>';
   var gTop=[];gm.forEach(function(m){m.kids.forEach(function(g){if(g.n-g.a>0)gTop.push(g)})});gTop.sort(function(a,b){return(b.n-b.a)-(a.n-a.a)});gTop=gTop.slice(0,15);
-  h+='<div class="sc-sec" id="scSecGpm">'+scSecHead('scSecGpm','By '+mLbl+' → '+gLbl,'sorted by not-implemented cases')+'<div style="overflow:auto"><table><thead><tr><th>'+mLbl+' / '+gLbl+'</th>'+wkHead+'<th>Cases</th><th>Impl.</th><th>Not Impl.</th><th>Event IR</th><th>vs Pre</th><th>'+dHead+'</th></tr></thead><tbody>';
-  gm.forEach(function(m){h+='<tr style="font-weight:700;background:#F1F5F9"><td>'+scEsc(m.k)+'</td>'+mtxCells(m)+'<td>'+m.n+'</td><td>'+m.a+'</td><td style="color:var(--c-danger)">'+(m.n-m.a)+'</td><td>'+pct(m.ir)+'</td><td>'+scBps(m.ir,m.b?m.b.ir:null)+'</td><td>'+lastDelta(m)+'</td></tr>';
-    m.kids.forEach(function(g){h+='<tr><td style="padding-left:22px">'+scEsc(g.k)+'</td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a||'')+'</td><td>'+pct(g.ir)+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td><td>'+lastDelta(g)+'</td></tr>'})});
+  h+='<div class="sc-sec" id="scSecGpm">'+scSecHead('scSecGpm','By '+mLbl+' → '+gLbl,'sorted by not-implemented cases')+'<div style="overflow:auto"><table><thead><tr><th>'+mLbl+' / '+gLbl+'</th>'+wkHead+'<th>Cases</th><th>Impl.</th><th>Not Impl.</th><th>Event IR</th><th>vs Pre</th>'+(wkCols.length>1?'<th>Latest WoW</th>':'')+'</tr></thead><tbody>';
+  gm.forEach(function(m){h+='<tr style="font-weight:700;background:#F1F5F9"><td>'+scEsc(m.k)+'</td>'+mtxCells(m)+'<td>'+m.n+'</td><td>'+m.a+'</td><td style="color:var(--c-danger)">'+(m.n-m.a)+'</td><td>'+pct(m.ir)+'</td><td>'+scBps(m.ir,m.b?m.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(m)+'</td>':'')+'</tr>';
+    m.kids.forEach(function(g){h+='<tr><td style="padding-left:22px">'+scEsc(g.k)+'</td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a||'')+'</td><td>'+pct(g.ir)+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(g)+'</td>':'')+'</tr>'})});
   h+='</tbody></table></div>'+(gTop.length?'<div style="font-size:.75em;color:#666;margin:12px 0 4px">Top '+gLbl+' by not-implemented cases</div><div style="height:'+Math.max(160,gTop.length*28+60)+'px"><canvas id="scGpmChart"></canvas></div>':'')+'</div>';
   // F. Not implemented list
   h+='<div class="sc-sec" id="scSecOpen">'+scSecHead('scSecOpen','Not Implemented Cases ('+open.length+')','for Sales / GPM follow-up')+'<div style="max-height:420px;overflow:auto"><table><thead><tr><th>'+mLbl+'</th><th>'+gLbl+'</th><th>Sales Team</th><th>Account</th><th>Case ID</th><th>AST</th><th>Rec Bucket</th><th>Week</th></tr></thead><tbody>';
