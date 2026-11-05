@@ -665,6 +665,8 @@ function renderMgmt(){
   html+='<div class="card" style="border-left:4px solid var(--r-us)"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">Report Case Mapping</h3><span style="font-size:.72em;color:#999">Upload CSV with Account ID + Case ID to add report cases to touched accounts and delivered case count</span></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="file" id="reportCaseFile" accept=".csv" style="font-size:.8em"><button class="btn btn-s" id="reportCaseTemplate">Download Template</button><button class="btn btn-s" id="reportCaseClear">Clear</button><span id="reportCaseStatus" style="font-size:.78em;color:#999"></span></div></div>';
   // Deep Dive
   html+='<div class="card dd-panel"><h3>Deep Dive</h3><div class="dd-filters" id="ddFilters"></div><div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center"><label style="font-weight:600;color:#666;font-size:.82em">Show each:</label><select id="ddBD" style="padding:5px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85em"><option value="Publisher Alias">Publisher Alias</option><option value="AST M1 Name">M1</option><option value="AST M2 Name">M2</option><option value="_team">Custom Team</option><option value="_tag">Support Tag</option><option value="Country">Country</option><option value="Country POS">Country POS</option><option value="AST Region">Region</option><option value="Sales Team">Sales Team</option><option value="SF Account Name">Account</option><option value="Product">Product</option><option value="Recommendation Bucket">Rec Bucket</option><option value="Cross Border?">Cross Border?</option></select><label style="font-weight:600;color:#666;font-size:.82em;margin-left:8px"><input type="checkbox" id="ddCompare" style="accent-color:var(--t-ncc)"> Period Compare</label><button class="btn btn-v" id="ddApply">Apply</button><button class="btn btn-s" id="ddReset">Reset Filters</button><button class="btn btn-g" id="ddExp">Export Summary</button><button class="btn btn-s" id="ddExpRaw">Export Raw Rows</button></div><div id="ddComparePanel" style="display:none;margin-bottom:12px;padding:10px;background:#F8F9FF;border:1px solid #E8EEFF;border-radius:8px;font-size:.82em"><div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center"><div><strong style="color:var(--t-ncc)">Period A:</strong> <select id="ddCmpAMode" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"><option value="week">Week</option><option value="date">Date</option></select> <select id="ddCmpAWk" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></select><span id="ddCmpADate" style="display:none"><input type="date" id="ddCmpAFrom" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"> to <input type="date" id="ddCmpATo" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></span></div><div><strong style="color:var(--t-opt)">Period B:</strong> <select id="ddCmpBMode" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"><option value="week">Week</option><option value="date">Date</option></select> <select id="ddCmpBWk" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></select><span id="ddCmpBDate" style="display:none"><input type="date" id="ddCmpBFrom" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"> to <input type="date" id="ddCmpBTo" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></span></div></div></div><div id="ddResults"><p style="color:#999;text-align:center;font-size:.85em">Click Apply to generate results</p></div></div>';
+  // Sales Collaboration Tracker
+  html+=scCardHtml();
 
   document.getElementById('mgmtContent').innerHTML=html;
 
@@ -1310,6 +1312,7 @@ function renderMgmt(){
 
   // Deep Dive
   initDD(T);
+  initCollab();
 }
 
 function initDD(T){
@@ -1330,6 +1333,203 @@ function initDD(T){
   ['ddCmpAWk','ddCmpBWk'].forEach(function(id){var sel=document.getElementById(id);allWks.forEach(function(w){var o=document.createElement('option');o.value=w;o.textContent=w;sel.appendChild(o)})});
   document.getElementById('ddCmpAMode').onchange=function(){document.getElementById('ddCmpAWk').style.display=this.value==='week'?'':'none';document.getElementById('ddCmpADate').style.display=this.value==='date'?'inline':'none'};
   document.getElementById('ddCmpBMode').onchange=function(){document.getElementById('ddCmpBWk').style.display=this.value==='week'?'':'none';document.getElementById('ddCmpBDate').style.display=this.value==='date'?'inline':'none'};
+}
+
+// === Sales Collaboration Tracker (event follow-up with Sales/GPM) ===
+var SC_IN='padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:.95em';
+var SC_GENERIC_AE=/^cbgpm$/i; // shared Cross Border GPM alias — not an individual GPM
+function scEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function scCardHtml(){
+  return '<div class="card" id="scCard" style="border-left:4px solid var(--t-opt)"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Sales Collaboration Tracker</h3><span style="font-size:.72em;color:#999">Weekly follow-up progress with Sales / GPM during an event — case-level IR by week, Sales Team and GPM</span></div>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:.8em"><strong style="color:#666">GPM Calibration:</strong><input type="file" id="scMapFile" accept=".csv"><button class="btn btn-s" id="scMapTpl">Download Templates</button><button class="btn btn-s" id="scMapClear">Clear</button><span id="scMapStatus" style="color:#999">Optional — GPM comes from AE Alias / AE Name / AE M1 Name; upload to override by SF Account ID or GPM login</span></div>'+
+    '<div class="dd-filters" id="scFilters" style="margin-top:10px"></div>'+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.82em;margin-bottom:12px"><label style="font-weight:600;color:#666">Period:</label><select id="scMode" style="'+SC_IN+'"><option value="date">Event period</option><option value="week">Single week</option></select><span id="scDateWrap"><input type="date" id="scFrom" style="'+SC_IN+'"> to <input type="date" id="scTo" style="'+SC_IN+'"></span><select id="scWk" style="'+SC_IN+';display:none"></select><label style="font-weight:600;color:#666">Market:</label><select id="scMkt" style="'+SC_IN+'"><option value="all">All</option><option value="nonjp">Non-JP</option><option value="jp">JP only</option></select><button class="btn btn-v" id="scApply">Generate</button><button class="btn btn-g" id="scExpPivot">Export Pivot CSV</button><button class="btn btn-g" id="scExpOpen">Export Not-Implemented CSV</button><button class="btn btn-s" id="scPdf">📄 Full Report PDF</button></div>'+
+    '<div id="scResults"><p style="color:#999;text-align:center;font-size:.85em">Set the event period and click Generate</p></div></div>';
+}
+function scColOf(re){var ks=rawData.length?Object.keys(rawData[0]):[];for(var i=0;i<ks.length;i++){if(re.test(ks[i]))return ks[i]}return null}
+function scSetMapStatus(t,c){var s=document.getElementById('scMapStatus');if(s){s.textContent=t;s.style.color=c||'#999'}}
+function initCollab(){
+  // GPM calibration (kept in localStorage so it only has to be uploaded once)
+  if(!window._gpmMap&&!window._gpmLoginMap){try{var sv=localStorage.getItem('irpda_gpm_map');if(sv){sv=JSON.parse(sv);if(sv&&(sv.acct||sv.login)){window._gpmMap=sv.acct||null;window._gpmLoginMap=sv.login||null}else window._gpmMap=sv}}catch(e){}}
+  if(window._gpmMap||window._gpmLoginMap)scSetMapStatus('Calibration loaded: '+Object.keys(window._gpmMap||{}).length+' accounts, '+Object.keys(window._gpmLoginMap||{}).length+' logins (saved from last upload).','#059669');
+  document.getElementById('scMapFile').onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var reader=new FileReader();reader.onload=function(ev){
+      var rows=parseCSV(ev.target.result);if(!rows.length){alert('Invalid CSV');return}
+      var cols=Object.keys(rows[0]),idC=null,nC=null,mC=null,lgC=null;
+      cols.forEach(function(c){var l=c.toLowerCase();
+        if(!idC&&(l.indexOf('account id')>=0||l.indexOf('longid')>=0||l==='account'))idC=c;
+        else if(!lgC&&(l.indexOf('login')>=0||l.indexOf('alias')>=0))lgC=c;
+        else if(!mC&&(/\bm1\b/.test(l)||l.indexOf('manager')>=0))mC=c;
+        else if(!nC&&(l.indexOf('gpm')>=0||l.indexOf('name')>=0)&&l.indexOf('account')<0)nC=c});
+      if(!idC&&!lgC){alert('CSV must have an SF Account ID column or a GPM Login column');return}
+      var map={},lmap={};rows.forEach(function(r){var n=nC?(r[nC]||'').trim():'',lg=lgC?(r[lgC]||'').trim():'',m=mC?(r[mC]||'').trim():'';
+        if(idC){var id=(r[idC]||'').trim();if(id&&(n||lg))map[id]={n:n||lg,m:m}}
+        else if(lg)lmap[lg.toLowerCase()]={n:n||lg,m:m}});
+      window._gpmMap=idC?map:null;window._gpmLoginMap=idC?null:lmap;
+      try{localStorage.setItem('irpda_gpm_map',JSON.stringify({acct:window._gpmMap,login:window._gpmLoginMap}))}catch(e){}
+      scSetMapStatus('Calibration loaded: '+(idC?Object.keys(map).length+' accounts':Object.keys(lmap).length+' GPM logins')+(mC?' with GPM M1':'')+'.','#059669');
+    };reader.readAsText(f);
+  };
+  document.getElementById('scMapTpl').onclick=function(){dlCSV([['SF Account ID','SF Account Name','GPM Name','GPM M1'],['0011E00001iYPZtQAO','TAILI Store - UK','Easter Peng','Scarlett Yu']],'gpm_calibration_by_account_template.csv');dlCSV([['GPM Login','GPM Name','GPM M1'],['eastpeng','Easter Peng','Scarlett Yu']],'gpm_calibration_by_login_template.csv')};
+  document.getElementById('scMapClear').onclick=function(){window._gpmMap=null;window._gpmLoginMap=null;try{localStorage.removeItem('irpda_gpm_map')}catch(e){}document.getElementById('scMapFile').value='';scSetMapStatus('GPM calibration cleared.','#D97706')};
+
+  // Scope filters
+  var defs=[{id:'scReg',col:'AST Region',label:'Region'},{id:'scM2',col:'AST M2 Name',label:'AST M2'},{id:'scAE',col:'AE Alias',label:'AE Alias (GPM)'},{id:'scCB',col:'Cross Border?',label:'Cross Border?'},{id:'scST',col:'Sales Team',label:'Sales Team'}];
+  var box=document.getElementById('scFilters');box.innerHTML='';
+  defs.forEach(function(fd){var seen={},vals=[];rawData.forEach(function(r){var v=r[fd.col]||'';if(v&&!seen[v]){seen[v]=1;vals.push(v)}});vals.sort();box.appendChild(createMS(fd.id,fd.label,vals))});
+  window._scDefs=defs;
+  var m2List=document.querySelector('#drop_scM2 .ms-list'); // default AST M2 = Winnie's org
+  if(m2List){var mbs=m2List.querySelectorAll('input'),hit=false;for(var i=0;i<mbs.length;i++)if(/winnie/i.test(mbs[i].value))hit=true;if(hit){for(var i2=0;i2<mbs.length;i2++)mbs[i2].checked=/winnie/i.test(mbs[i2].value);updBtn(document.querySelector('[data-id="scM2"]'),m2List)}}
+  var regList=document.querySelector('#drop_scReg .ms-list');
+  if(regList&&regList.querySelector('input[value="APAC"]')){var rbs=regList.querySelectorAll('input');for(var j=0;j<rbs.length;j++)rbs[j].checked=rbs[j].value==='APAC';updBtn(document.querySelector('[data-id="scReg"]'),regList)}
+
+  // Weeks (Sun–Sat by Weekend Day). Default event period = the 4 weeks ending with the report week (3rd-from-last)
+  var sats={},satArr=[];rawData.forEach(function(r){var s=r['_wkSat'];if(s){var k=fmt(s);if(!sats[k]){sats[k]=s;satArr.push(k)}}});satArr.sort().reverse();
+  var ws=document.getElementById('scWk');satArr.forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=getWeek(sats[k])+' (ending '+k+')';ws.appendChild(o)});
+  var rep=satArr.length>=3?satArr[2]:satArr[0];if(rep){ws.value=rep;var rs=pD(rep);document.getElementById('scTo').value=rep;document.getElementById('scFrom').value=fmt(new Date(rs.getTime()-27*864e5))}
+  document.getElementById('scMode').onchange=function(){ws.style.display=this.value==='week'?'':'none';document.getElementById('scDateWrap').style.display=this.value==='date'?'inline':'none'};
+  document.getElementById('scApply').onclick=runCollab;
+  document.getElementById('scExpPivot').onclick=scExportPivot;
+  document.getElementById('scExpOpen').onclick=function(){var R=window._scLast;if(!R){alert('Click Generate first');return}
+    var out=[['GPM M1','GPM','GPM Login','Sales Team','Sales subteam','SF Account ID','Account','Case ID','AST','Publisher Alias','Rec Bucket','Country POS','Week','Delivered Date']];
+    R.open.forEach(function(c){out.push([c.gm1,c.gpm,c.rg||'',c.st,c.sub,c.aid,c.acct,c.id,c.ast,c.pa,Object.keys(c.bk).join(' / '),c.cty,c.wk?getWeek(pD(c.wk)):'',fmt(c.del)])});
+    dlCSV(out,'sales_collab_not_implemented_'+R.fileLbl+'.csv')};
+  document.getElementById('scPdf').onclick=function(){scSecPdf(null,'Sales Collaboration Tracker')};
+}
+function scScope(){
+  var defs=window._scDefs||[],flt=[];defs.forEach(function(fd){var s=getMS(fd.id);if(s.length)flt.push({col:fd.col,vals:s})});
+  var mkt=document.getElementById('scMkt').value;
+  return rawData.filter(function(r){for(var i=0;i<flt.length;i++){if(flt[i].vals.indexOf(r[flt[i].col]||'')<0)return false}
+    if(mkt!=='all'){var jp=(r['Country']||'')==='JP';if(mkt==='jp'?!jp:jp)return false}return true});
+}
+function scCases(rows,adCol){
+  var cs={};
+  rows.forEach(function(r){var cid=r['_cid'];if(!cid)return;var c=cs[cid];
+    if(!c)c=cs[cid]={id:cid,f:0,aid:r['SF Account ID']||'',acct:r['SF Account Name']||'',st:r['Sales Team']||'(blank)',sub:r['Sales subteam']||'',ast:r['AST SA Name']||'',pa:r['Publisher Alias']||'',cty:r['Country POS']||r['Country']||'',bk:{},del:null,imp:null,wk:null};
+    if(r['_caf']===1)c.f=1;var b=r['Recommendation Bucket'];if(b)c.bk[b]=1;
+    if(!c.rg&&r['AE Alias'])c.rg=r['AE Alias'];if(!c.rgn&&r['AE Name'])c.rgn=r['AE Name'];if(!c.rgm&&r['AE M1 Name'])c.rgm=r['AE M1 Name'];
+    if(r['_date']&&(!c.del||r['_date']<c.del)){c.del=r['_date'];c.wk=r['_wkSat']?fmt(r['_wkSat']):null}
+    if(adCol&&r['_af']===1){var ad=pD(r[adCol]||'');if(ad&&(!c.imp||ad<c.imp))c.imp=ad}});
+  // GPM = AE Alias / AE Name / AE M1 Name from raw; calibration (by account, then by login) overrides
+  var map=window._gpmMap,lmap=window._gpmLoginMap,list=objVals(cs);
+  list.forEach(function(c){var g=map&&map[c.aid],lg=c.rg&&lmap&&lmap[String(c.rg).toLowerCase()];c.src='none';
+    if(g){c.gpm=g.n;c.gm1=g.m||'(No M1)';c.src='cal'}
+    else if(lg){c.gpm=lg.n;c.gm1=lg.m||c.rgm||'(No M1)';c.src='cal'}
+    else if(c.rg&&!SC_GENERIC_AE.test(c.rg)){c.gpm=c.rgn||c.rg;c.gm1=c.rgm||'(No M1)';c.src='raw'}
+    else{c.gpm='(Unmapped'+(c.rg?': '+c.rg:'')+')';c.gm1='(Unmapped)'}});
+  return list;
+}
+function scStat(list){var n=list.length,a=0;for(var i=0;i<list.length;i++)if(list[i].f)a++;return{n:n,a:a,ir:n?a/n:0}}
+function scGroup(list,fn){var g={};list.forEach(function(c){var k=fn(c);if(!g[k])g[k]={k:k,items:[]};g[k].items.push(c)});return objVals(g).map(function(x){var s=scStat(x.items);x.n=s.n;x.a=s.a;x.ir=s.ir;return x})}
+function scIrBg(v){return v>=0.85?'#D1FAE5':v>=0.7?'#FEF3C7':'#FEE2E2'}
+function scBps(cur,prev){if(prev==null)return'<span style="color:#999">—</span>';var w=(cur-prev)*1e4;return'<span class="'+bCls(w)+'" style="font-weight:700">'+bStr(w)+'</span>'}
+function scSecHead(id,title,note){return'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:20px 0 8px"><h4 style="margin:0">'+title+(note?' <span style="font-weight:400;font-size:.8em;color:#999">'+note+'</span>':'')+'</h4><button class="btn btn-s sc-noprint" style="font-size:.75em;padding:3px 10px" onclick="scSecPdf([\''+id+'\'],\''+title.replace(/'/g,'')+'\')">📄 PDF</button></div>'}
+function runCollab(){
+  var scope=scScope(),mode=document.getElementById('scMode').value,d0,d1,lbl,fileLbl;
+  if(mode==='week'){var k=document.getElementById('scWk').value;if(!k){alert('No weeks in data');return}d1=pD(k);d0=new Date(d1.getTime()-6*864e5);lbl=getWeek(d1)+' (week ending '+k+')';fileLbl=getWeek(d1)}
+  else{d0=pD(document.getElementById('scFrom').value);d1=pD(document.getElementById('scTo').value);if(!d0||!d1||d1<d0){alert('Pick a valid event period');return}lbl=fmt(d0)+' → '+fmt(d1);fileLbl=fmt(d0)+'_'+fmt(d1)}
+  var e1=new Date(d1.getTime()+864e5),len=e1-d0,b0=new Date(d0.getTime()-len);
+  var cur=scope.filter(function(r){return r['_date']&&r['_date']>=d0&&r['_date']<e1});
+  var base=scope.filter(function(r){return r['_date']&&r['_date']>=b0&&r['_date']<d0});
+  var adCol=scColOf(/^(adoption|implementation) date$/i);
+  var cs=scCases(cur,adCol),bcs=scCases(base,adCol);
+  var el=document.getElementById('scResults');
+  if(!cs.length){el.innerHTML='<p style="color:#e74c3c;text-align:center">No cases in this scope</p>';window._scLast=null;return}
+  var hasAE=!!scColOf(/^AE Alias$/i),gLbl=hasAE?'GPM':'Sales subteam',mLbl=hasAE?'GPM M1':'Sales Team';
+  if(!hasAE)cs.concat(bcs).forEach(function(c){c.gpm=c.sub||'(blank)';c.gm1=c.st});
+  var bLbl='Pre-event ('+fmt(b0)+' → '+fmt(new Date(d0.getTime()-864e5))+')';
+  // weeks in the event (by Weekend Day of each case)
+  var wkSet={};cs.forEach(function(c){if(c.wk)wkSet[c.wk]=1});var weeks=Object.keys(wkSet).sort();
+  var wkCols=weeks.slice(-8),wkLbl=function(k){return getWeek(pD(k))};
+  var tot=scStat(cs),bt=scStat(bcs);
+  var byWk={};weeks.forEach(function(k){byWk[k]=scStat(cs.filter(function(c){return c.wk===k}))});
+  var lastW=weeks[weeks.length-1],prevW=weeks.length>1?weeks[weeks.length-2]:null;
+  var latestWow=prevW?(byWk[lastW].ir-byWk[prevW].ir)*1e4:null;
+  // follow-up checkpoints: IR of cases delivered so far, as of each Saturday until the latest data date
+  var dataMax=null;rawData.forEach(function(r){if(r['_date']&&(!dataMax||r['_date']>dataMax))dataMax=r['_date']});
+  var cps=[],sat=pD(weeks[0]||fmt(d1));while(sat&&sat<=new Date(Math.max(dataMax?dataMax.getTime():0,d1.getTime())+6*864e5)&&cps.length<26){var sk=fmt(sat),endT=sat.getTime()+864e5-1;var dl=cs.filter(function(c){return c.del&&c.del.getTime()<=endT});var im=dl.filter(function(c){return c.f&&(c.imp||c.del).getTime()<=endT}).length;cps.push({k:sk,n:dl.length,a:im,ir:dl.length?im/dl.length:0});sat=new Date(sat.getTime()+7*864e5);if(dataMax&&sat.getTime()-7*864e5>dataMax.getTime())break}
+  var cpGain=cps.length>1?(cps[cps.length-1].ir-cps[cps.length-2].ir)*1e4:null;
+  // groups
+  var mkRows=function(list,blist,fn){var bmap={};scGroup(blist,fn).forEach(function(g){bmap[g.k]=g});return scGroup(list,fn).map(function(g){g.b=bmap[g.k]||null;g.w={};wkCols.forEach(function(k){var it=g.items.filter(function(c){return c.wk===k});g.w[k]=it.length?scStat(it):null});return g})};
+  var st=mkRows(cs,bcs,function(c){return c.st}).sort(function(a,b){return b.n-a.n});
+  var gm=mkRows(cs,bcs,function(c){return c.gm1}).map(function(m){m.kids=mkRows(m.items,bcs.filter(function(c){return c.gm1===m.k}),function(c){return c.gpm}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n});return m}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n});
+  var open=cs.filter(function(c){return!c.f}).sort(function(a,b){return(a.gm1+a.gpm).localeCompare(b.gm1+b.gpm)});
+  var nCal=cs.filter(function(c){return c.src==='cal'}).length,nRaw=cs.filter(function(c){return c.src==='raw'}).length,nUn=cs.length-nCal-nRaw;
+  window._scLast={lbl:lbl,bLbl:bLbl,fileLbl:fileLbl,st:st,gm:gm,tot:tot,bt:bt,open:open,gLbl:gLbl,mLbl:mLbl,weeks:weeks,wkCols:wkCols,byWk:byWk,cps:cps};
+  var irCls=function(v){return v>=0.85?'good':v>=0.7?'warn':'bad'};
+  var vsB=bt.n?(tot.ir-bt.ir)*1e4:null;
+  var h='<div style="font-size:.78em;color:#666;margin-bottom:6px">Scope: <strong>'+scEsc(lbl)+'</strong> · baseline '+scEsc(bLbl)+' · cases de-duplicated by Case ID · data up to '+fmt(dataMax)+'</div>';
+  // A. Summary
+  h+='<div class="sc-sec" id="scSecSum">'+scSecHead('scSecSum','Summary')+'<div class="kpi-row">'+
+    '<div class="kpi"><div class="lbl">Collab Cases</div><div class="val">'+tot.n+'</div><div class="sub">'+weeks.length+' week(s) · pre-event '+bt.n+'</div></div>'+
+    '<div class="kpi"><div class="lbl">Implemented</div><div class="val good">'+tot.a+'</div></div>'+
+    '<div class="kpi"><div class="lbl">Not Implemented</div><div class="val bad">'+(tot.n-tot.a)+'</div><div class="sub">to follow up</div></div>'+
+    '<div class="kpi"><div class="lbl">Event Case IR</div><div class="val '+irCls(tot.ir)+'">'+pct(tot.ir)+'</div>'+(vsB!==null?'<div class="trend '+(vsB>0?'up':vsB<0?'down':'flat')+'">'+bStr(vsB)+' vs pre-event '+pct(bt.ir)+'</div>':'')+'</div>'+
+    (latestWow!==null?'<div class="kpi"><div class="lbl">Latest Week IR</div><div class="val '+irCls(byWk[lastW].ir)+'">'+pct(byWk[lastW].ir)+'</div><div class="trend '+(latestWow>0?'up':latestWow<0?'down':'flat')+'">'+bStr(latestWow)+' WoW ('+wkLbl(lastW)+' vs '+wkLbl(prevW)+')</div></div>':'')+
+    (cpGain!==null?'<div class="kpi"><div class="lbl">Follow-up Gain (last wk)</div><div class="val '+(cpGain>0?'good':'')+'">'+bStr(cpGain)+'</div><div class="sub">IR as of '+cps[cps.length-1].k+'</div></div>':'')+
+    '</div><div style="font-size:.72em;color:#999">GPM source: AE Alias '+nRaw+' · calibrated '+nCal+' · unmapped '+nUn+' cases</div></div>';
+  // B. Weekly delivery & IR
+  h+='<div class="sc-sec" id="scSecWk">'+scSecHead('scSecWk','Weekly Delivery & IR','cases delivered each week of the event and their IR')+'<div class="grid-2"><div style="height:280px"><canvas id="scWkChart"></canvas></div><div><table><thead><tr><th>Week</th><th>Delivered</th><th>Implemented</th><th>Not Impl.</th><th>IR</th><th>WoW</th></tr></thead><tbody>';
+  weeks.forEach(function(k,i){var s=byWk[k],p=i?byWk[weeks[i-1]]:null;h+='<tr><td><strong>'+wkLbl(k)+'</strong> <span style="color:#999;font-size:.85em">'+k.slice(5)+'</span></td><td>'+s.n+'</td><td>'+s.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(s.n-s.a)+'</td><td style="font-weight:700;background:'+scIrBg(s.ir)+'">'+pct(s.ir)+'</td><td>'+scBps(s.ir,p?p.ir:null)+'</td></tr>'});
+  h+='<tr style="font-weight:700;background:#F8FAFC"><td>Event total</td><td>'+tot.n+'</td><td>'+tot.a+'</td><td>'+(tot.n-tot.a)+'</td><td>'+pct(tot.ir)+'</td><td>'+(bt.n?scBps(tot.ir,bt.ir)+' <span style="font-weight:400;color:#999;font-size:.85em">vs pre</span>':'')+'</td></tr></tbody></table></div></div></div>';
+  // C. Follow-up progress
+  h+='<div class="sc-sec" id="scSecProg">'+scSecHead('scSecProg','Follow-up Progress','IR of delivered cases as of each week end — shows how much the chasing lifted IR')+'<div class="grid-2"><div style="height:260px"><canvas id="scProgChart"></canvas></div><div><table><thead><tr><th>As of</th><th>Delivered so far</th><th>Implemented</th><th>IR</th><th>Gain</th></tr></thead><tbody>';
+  cps.forEach(function(c,i){h+='<tr><td><strong>'+wkLbl(c.k)+'</strong> <span style="color:#999;font-size:.85em">'+c.k.slice(5)+'</span></td><td>'+c.n+'</td><td>'+c.a+'</td><td style="font-weight:700;background:'+scIrBg(c.ir)+'">'+pct(c.ir)+'</td><td>'+scBps(c.ir,i?cps[i-1].ir:null)+'</td></tr>'});
+  h+='</tbody></table></div></div></div>';
+  // D/E. Sales Team and GPM matrices
+  var wkHead=wkCols.map(function(k){return'<th>'+wkLbl(k)+'</th>'}).join('');
+  var mtxCells=function(g){var cells='';wkCols.forEach(function(k){var s=g.w[k];cells+=s?'<td title="'+s.a+'/'+s.n+'" style="background:'+scIrBg(s.ir)+'">'+pct(s.ir)+'</td>':'<td style="color:#ccc">—</td>'});return cells};
+  var lastDelta=function(g){if(wkCols.length<2)return scBps(g.ir,g.b?g.b.ir:null);var a=g.w[wkCols[wkCols.length-1]],b=g.w[wkCols[wkCols.length-2]];return a&&b?scBps(a.ir,b.ir):'<span style="color:#999">—</span>'};
+  var dHead=wkCols.length>1?'Latest WoW':'vs Pre-event';
+  h+='<div class="sc-sec" id="scSecSt">'+scSecHead('scSecSt','By Sales Team','weekly IR, event total and change')+'<div style="height:'+Math.max(160,st.length*34+60)+'px;margin-bottom:10px"><canvas id="scStChart"></canvas></div><div style="overflow:auto"><table><thead><tr><th>Sales Team</th>'+wkHead+'<th>Cases</th><th>Impl.</th><th>Not Impl.</th><th>Event IR</th><th>Pre-event IR</th><th>vs Pre</th><th>'+dHead+'</th></tr></thead><tbody>';
+  st.forEach(function(g){h+='<tr><td><strong>'+scEsc(g.k)+'</strong></td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a)+'</td><td style="font-weight:700">'+pct(g.ir)+'</td><td>'+(g.b?pct(g.b.ir):'—')+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td><td>'+lastDelta(g)+'</td></tr>'});
+  h+='<tr style="font-weight:700;background:#F8FAFC"><td>Total</td>'+wkCols.map(function(k){return'<td>'+pct(byWk[k].ir)+'</td>'}).join('')+'<td>'+tot.n+'</td><td>'+tot.a+'</td><td>'+(tot.n-tot.a)+'</td><td>'+pct(tot.ir)+'</td><td>'+(bt.n?pct(bt.ir):'—')+'</td><td>'+scBps(tot.ir,bt.n?bt.ir:null)+'</td><td>'+(latestWow!==null&&wkCols.length>1?scBps(byWk[lastW].ir,byWk[prevW].ir):'')+'</td></tr></tbody></table></div></div>';
+  var gTop=[];gm.forEach(function(m){m.kids.forEach(function(g){if(g.n-g.a>0)gTop.push(g)})});gTop.sort(function(a,b){return(b.n-b.a)-(a.n-a.a)});gTop=gTop.slice(0,15);
+  h+='<div class="sc-sec" id="scSecGpm">'+scSecHead('scSecGpm','By '+mLbl+' → '+gLbl,'sorted by not-implemented cases')+'<div style="overflow:auto"><table><thead><tr><th>'+mLbl+' / '+gLbl+'</th>'+wkHead+'<th>Cases</th><th>Impl.</th><th>Not Impl.</th><th>Event IR</th><th>vs Pre</th><th>'+dHead+'</th></tr></thead><tbody>';
+  gm.forEach(function(m){h+='<tr style="font-weight:700;background:#F1F5F9"><td>'+scEsc(m.k)+'</td>'+mtxCells(m)+'<td>'+m.n+'</td><td>'+m.a+'</td><td style="color:var(--c-danger)">'+(m.n-m.a)+'</td><td>'+pct(m.ir)+'</td><td>'+scBps(m.ir,m.b?m.b.ir:null)+'</td><td>'+lastDelta(m)+'</td></tr>';
+    m.kids.forEach(function(g){h+='<tr><td style="padding-left:22px">'+scEsc(g.k)+'</td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a||'')+'</td><td>'+pct(g.ir)+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td><td>'+lastDelta(g)+'</td></tr>'})});
+  h+='</tbody></table></div>'+(gTop.length?'<div style="font-size:.75em;color:#666;margin:12px 0 4px">Top '+gLbl+' by not-implemented cases</div><div style="height:'+Math.max(160,gTop.length*28+60)+'px"><canvas id="scGpmChart"></canvas></div>':'')+'</div>';
+  // F. Not implemented list
+  h+='<div class="sc-sec" id="scSecOpen">'+scSecHead('scSecOpen','Not Implemented Cases ('+open.length+')','for Sales / GPM follow-up')+'<div style="max-height:420px;overflow:auto"><table><thead><tr><th>'+mLbl+'</th><th>'+gLbl+'</th><th>Sales Team</th><th>Account</th><th>Case ID</th><th>AST</th><th>Rec Bucket</th><th>Week</th></tr></thead><tbody>';
+  open.forEach(function(c){h+='<tr><td>'+scEsc(c.gm1)+'</td><td>'+scEsc(c.gpm)+'</td><td>'+scEsc(c.st)+'</td><td>'+scEsc(c.acct)+'</td><td style="font-size:.8em">'+scEsc(c.id)+'</td><td>'+scEsc(c.ast)+'</td><td>'+scEsc(Object.keys(c.bk).join(' / '))+'</td><td>'+(c.wk?wkLbl(c.wk):'')+'</td></tr>'});
+  h+='</tbody></table></div></div>';
+  el.innerHTML=h;
+
+  ['scWk','scSt','scGpm','scProg'].forEach(function(k){if(charts[k]){charts[k].destroy();charts[k]=null}});
+  var anim={duration:0}; // charts render instantly so PDF snapshots are complete
+  charts.scWk=new Chart(document.getElementById('scWkChart'),{type:'bar',data:{labels:weeks.map(wkLbl),datasets:[{type:'line',label:'IR %',data:weeks.map(function(k){return+(byWk[k].ir*100).toFixed(1)}),borderColor:'#EA580C',backgroundColor:'#EA580C',yAxisID:'y1',tension:.3,pointRadius:4},{label:'Implemented',data:weeks.map(function(k){return byWk[k].a}),backgroundColor:'#059669',stack:'c'},{label:'Not Implemented',data:weeks.map(function(k){return byWk[k].n-byWk[k].a}),backgroundColor:'#FCA5A5',stack:'c'}]},options:{animation:anim,responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,title:{display:true,text:'Cases'}},y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{callback:function(v){return v+'%'}}}},plugins:{legend:{position:'bottom'}}}});
+  charts.scProg=new Chart(document.getElementById('scProgChart'),{type:'line',data:{labels:cps.map(function(c){return wkLbl(c.k)}),datasets:[{label:'IR of delivered cases (as of week end)',data:cps.map(function(c){return+(c.ir*100).toFixed(1)}),borderColor:'#6366F1',backgroundColor:'#6366F120',fill:true,tension:.3,pointRadius:4}]},options:{animation:anim,responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:100,ticks:{callback:function(v){return v+'%'}}}},plugins:{legend:{position:'bottom'}}}});
+  var stack=function(labels,impl,notImpl,irs){return{type:'bar',data:{labels:labels,datasets:[{label:'Implemented',data:impl,backgroundColor:'#059669'},{label:'Not Implemented',data:notImpl,backgroundColor:'#FCA5A5'}]},options:{animation:anim,indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,grid:{color:'#F1F5F9'}},y:{stacked:true,grid:{display:false}}},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{afterBody:function(items){return'IR: '+pct(irs[items[0].dataIndex])}}}}}}};
+  charts.scSt=new Chart(document.getElementById('scStChart'),stack(st.map(function(g){return g.k}),st.map(function(g){return g.a}),st.map(function(g){return g.n-g.a}),st.map(function(g){return g.ir})));
+  if(gTop.length)charts.scGpm=new Chart(document.getElementById('scGpmChart'),stack(gTop.map(function(g){return g.k}),gTop.map(function(g){return g.a}),gTop.map(function(g){return g.n-g.a}),gTop.map(function(g){return g.ir})));
+}
+function scExportPivot(){
+  var R=window._scLast;if(!R){alert('Click Generate first');return}
+  var wh=R.wkCols.map(function(k){return getWeek(pD(k))+' IR'});
+  var out=[['Sales Collaboration — '+R.lbl],[],['Week','Delivered','Implemented','Not Implemented','IR']];
+  R.weeks.forEach(function(k){var s=R.byWk[k];out.push([getWeek(pD(k)),s.n,s.a,s.n-s.a,pct(s.ir)])});
+  out.push(['Event total',R.tot.n,R.tot.a,R.tot.n-R.tot.a,pct(R.tot.ir)]);out.push(['Pre-event',R.bt.n,R.bt.a,R.bt.n-R.bt.a,R.bt.n?pct(R.bt.ir):'']);
+  out.push([]);out.push(['Sales Team'].concat(wh,['Not Implemented (0)','Implemented (1)','Total','Event IR','Pre-event IR']));
+  R.st.forEach(function(g){out.push([g.k].concat(R.wkCols.map(function(k){return g.w[k]?pct(g.w[k].ir):''}),[g.n-g.a,g.a,g.n,pct(g.ir),g.b?pct(g.b.ir):'']))});
+  out.push([]);out.push([R.mLbl,R.gLbl].concat(wh,['Not Implemented (0)','Implemented (1)','Total','Event IR']));
+  R.gm.forEach(function(m){out.push([m.k,'(subtotal)'].concat(R.wkCols.map(function(k){return m.w[k]?pct(m.w[k].ir):''}),[m.n-m.a,m.a,m.n,pct(m.ir)]));m.kids.forEach(function(g){out.push([m.k,g.k].concat(R.wkCols.map(function(k){return g.w[k]?pct(g.w[k].ir):''}),[g.n-g.a,g.a,g.n,pct(g.ir)]))})});
+  dlCSV(out,'sales_collab_pivot_'+R.fileLbl+'.csv');
+}
+// Email-ready PDF: fixed-width page, charts as images, no scroll boxes. ids=null → all sections
+function scSecPdf(ids,title){
+  var R=window._scLast;if(!R){alert('Click Generate first');return}
+  var secs=ids?ids.map(function(i){return document.getElementById(i)}):Array.prototype.slice.call(document.querySelectorAll('#scResults .sc-sec'));
+  var body='';
+  secs.forEach(function(src,si){if(!src)return;var clone=src.cloneNode(true),c1=src.querySelectorAll('canvas'),c2=clone.querySelectorAll('canvas');
+    for(var i=0;i<c1.length;i++){var img=document.createElement('img');img.src=c1[i].toDataURL('image/png');img.style.cssText='width:100%;height:100%;object-fit:contain';c2[i].parentNode.replaceChild(img,c2[i])}
+    var bx=clone.querySelectorAll('[style*="overflow"]');for(var j=0;j<bx.length;j++){bx[j].style.maxHeight='none';bx[j].style.overflow='visible'}
+    var nb=clone.querySelectorAll('.sc-noprint');for(var q=0;q<nb.length;q++)nb[q].parentNode.removeChild(nb[q]);
+    body+='<div class="sec"'+(ids||si===0?'':' style="page-break-before:always"')+'>'+clone.innerHTML+'</div>'});
+  var css='';var ss=document.querySelectorAll('style');for(var k=0;k<ss.length;k++)css+=ss[k].outerHTML;
+  var w=window.open('','_blank');if(!w){alert('Popup blocked — allow popups to export PDF');return}
+  w.document.write('<html><head><title>'+scEsc(title)+' — '+scEsc(R.lbl)+'</title>'+css+'<style>body{background:#fff;margin:0;padding:24px}.page{max-width:1100px;margin:0 auto}.sec h4{font-size:15px}.kpi{box-shadow:none}@page{size:landscape;margin:12mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body><div class="page"><div style="border-bottom:3px solid #EA580C;padding-bottom:8px;margin-bottom:6px"><div style="font-size:18px;font-weight:800">'+scEsc(title)+'</div><div style="font-size:12px;color:#666">'+scEsc(R.lbl)+' · baseline '+scEsc(R.bLbl)+' · generated '+fmt(new Date())+'</div></div>'+body+'</div></body></html>');
+  w.document.close();w.focus();setTimeout(function(){w.print()},600);
 }
 
 function getFilteredDD(){
