@@ -664,7 +664,9 @@ function renderMgmt(){
   // Report Case Mapping
   html+='<div class="card" style="border-left:4px solid var(--r-us)"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">Report Case Mapping</h3><span style="font-size:.72em;color:#999">Upload CSV with Account ID + Case ID to add report cases to touched accounts and delivered case count</span></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="file" id="reportCaseFile" accept=".csv" style="font-size:.8em"><button class="btn btn-s" id="reportCaseTemplate">Download Template</button><button class="btn btn-s" id="reportCaseClear">Clear</button><span id="reportCaseStatus" style="font-size:.78em;color:#999"></span></div></div>';
   // Deep Dive
-  html+='<div class="card dd-panel"><h3>Deep Dive</h3><div class="dd-filters" id="ddFilters"></div><div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center"><label style="font-weight:600;color:#666;font-size:.82em">Show each:</label><select id="ddBD" style="padding:5px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85em"><option value="Publisher Alias">Publisher Alias</option><option value="AST M1 Name">M1</option><option value="AST M2 Name">M2</option><option value="_team">Custom Team</option><option value="_tag">Support Tag</option><option value="Country">Country</option><option value="Country POS">Country POS</option><option value="AST Region">Region</option><option value="Sales Team">Sales Team</option><option value="SF Account Name">Account</option><option value="Product">Product</option><option value="Recommendation Bucket">Rec Bucket</option><option value="Cross Border?">Cross Border?</option></select><label style="font-weight:600;color:#666;font-size:.82em;margin-left:8px"><input type="checkbox" id="ddCompare" style="accent-color:var(--t-ncc)"> Period Compare</label><button class="btn btn-v" id="ddApply">Apply</button><button class="btn btn-s" id="ddReset">Reset Filters</button><button class="btn btn-g" id="ddExp">Export Summary</button><button class="btn btn-s" id="ddExpRaw">Export Raw Rows</button></div><div id="ddComparePanel" style="display:none;margin-bottom:12px;padding:10px;background:#F8F9FF;border:1px solid #E8EEFF;border-radius:8px;font-size:.82em"><div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center"><div><strong style="color:var(--t-ncc)">Period A:</strong> <select id="ddCmpAMode" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"><option value="week">Week</option><option value="date">Date</option></select> <select id="ddCmpAWk" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></select><span id="ddCmpADate" style="display:none"><input type="date" id="ddCmpAFrom" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"> to <input type="date" id="ddCmpATo" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></span></div><div><strong style="color:var(--t-opt)">Period B:</strong> <select id="ddCmpBMode" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"><option value="week">Week</option><option value="date">Date</option></select> <select id="ddCmpBWk" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></select><span id="ddCmpBDate" style="display:none"><input type="date" id="ddCmpBFrom" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"> to <input type="date" id="ddCmpBTo" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></span></div></div></div><div id="ddResults"><p style="color:#999;text-align:center;font-size:.85em">Click Apply to generate results</p></div></div>';
+  // Deal Type (DAA) list
+  html+=daaCardHtml();
+  html+='<div class="card dd-panel"><h3>Deep Dive</h3><div class="dd-filters" id="ddFilters"></div><div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center"><label style="font-weight:600;color:#666;font-size:.82em">Show each:</label><select id="ddBD" style="padding:5px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85em"><option value="Publisher Alias">Publisher Alias</option><option value="AST M1 Name">M1</option><option value="AST M2 Name">M2</option><option value="_team">Custom Team</option><option value="_tag">Support Tag</option><option value="Country">Country</option><option value="Country POS">Country POS</option><option value="AST Region">Region</option><option value="Sales Team">Sales Team</option><option value="SF Account Name">Account</option><option value="Product">Product</option><option value="Recommendation Bucket">Rec Bucket</option><option value="Cross Border?">Cross Border?</option><option value="_deal">Deal Type (DAA)</option><option value="_daaTag">DAA Support Tag</option></select><label style="font-weight:600;color:#666;font-size:.82em;margin-left:8px"><input type="checkbox" id="ddCompare" style="accent-color:var(--t-ncc)"> Period Compare</label><button class="btn btn-v" id="ddApply">Apply</button><button class="btn btn-s" id="ddReset">Reset Filters</button><button class="btn btn-g" id="ddExp">Export Summary</button><button class="btn btn-s" id="ddExpRaw">Export Raw Rows</button></div><div id="ddComparePanel" style="display:none;margin-bottom:12px;padding:10px;background:#F8F9FF;border:1px solid #E8EEFF;border-radius:8px;font-size:.82em"><div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center"><div><strong style="color:var(--t-ncc)">Period A:</strong> <select id="ddCmpAMode" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"><option value="week">Week</option><option value="date">Date</option></select> <select id="ddCmpAWk" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></select><span id="ddCmpADate" style="display:none"><input type="date" id="ddCmpAFrom" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"> to <input type="date" id="ddCmpATo" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></span></div><div><strong style="color:var(--t-opt)">Period B:</strong> <select id="ddCmpBMode" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"><option value="week">Week</option><option value="date">Date</option></select> <select id="ddCmpBWk" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></select><span id="ddCmpBDate" style="display:none"><input type="date" id="ddCmpBFrom" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"> to <input type="date" id="ddCmpBTo" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px"></span></div></div></div><div id="ddResults"><p style="color:#999;text-align:center;font-size:.85em">Click Apply to generate results</p></div></div>';
   // Sales Collaboration Tracker
   html+=scCardHtml();
 
@@ -1317,12 +1319,13 @@ function renderMgmt(){
   document.getElementById('reportCaseClear').onclick=function(){window._reportCases=null;document.getElementById('reportCaseFile').value='';document.getElementById('reportCaseStatus').textContent='Report cases cleared.';document.getElementById('reportCaseStatus').style.color='#D97706'};
 
   // Deep Dive
+  initDaa();
   initDD(T);
   initCollab();
 }
 
 function initDD(T){
-  var filterDefs=[{id:'ddReg',col:'AST Region',label:'Region'},{id:'ddST',col:'Sales Team',label:'Sales Team'},{id:'ddSubT',col:'Submitting Team',label:'Submitting Team'},{id:'ddCty',col:'Country',label:'Country'},{id:'ddPOS',col:'Country POS',label:'Country POS'},{id:'ddCB',col:'Cross Border?',label:'Cross Border?'},{id:'ddSA',col:'Publisher Alias',label:'Publisher Alias'},{id:'ddM1',col:'AST M1 Name',label:'AST M1'},{id:'ddM2',col:'AST M2 Name',label:'AST M2'},{id:'ddWk',col:'_week',label:'Week Number'}];
+  var filterDefs=[{id:'ddReg',col:'AST Region',label:'Region'},{id:'ddST',col:'Sales Team',label:'Sales Team'},{id:'ddSubT',col:'Submitting Team',label:'Submitting Team'},{id:'ddCty',col:'Country',label:'Country'},{id:'ddPOS',col:'Country POS',label:'Country POS'},{id:'ddCB',col:'Cross Border?',label:'Cross Border?'},{id:'ddSA',col:'Publisher Alias',label:'Publisher Alias'},{id:'ddM1',col:'AST M1 Name',label:'AST M1'},{id:'ddM2',col:'AST M2 Name',label:'AST M2'},{id:'ddWk',col:'_week',label:'Week Number'},{id:'ddDeal',col:'_deal',label:'Deal Type'}];
   var container=document.getElementById('ddFilters');container.innerHTML='';
   filterDefs.forEach(function(fd){var all=rawData.map(function(r){return r[fd.col]||''}).filter(function(v){return v});var vals=[];for(var i=0;i<all.length;i++){if(vals.indexOf(all[i])<0)vals.push(all[i])}vals.sort();container.appendChild(createMS(fd.id,fd.label,vals))});
   var dateFg=document.createElement('div');dateFg.className='fg';dateFg.innerHTML='<label>Delivered Date</label><div style="display:flex;gap:4px;align-items:center"><input type="date" id="ddDateFrom" style="padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:.78em;width:115px"><span style="font-size:.75em;color:#999">→</span><input type="date" id="ddDateTo" style="padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:.78em;width:115px"></div>';
@@ -1341,13 +1344,77 @@ function initDD(T){
   document.getElementById('ddCmpBMode').onchange=function(){document.getElementById('ddCmpBWk').style.display=this.value==='week'?'':'none';document.getElementById('ddCmpBDate').style.display=this.value==='date'?'inline':'none'};
 }
 
+// === Deal Type (DAA) — account list upload + DAA vs Non-DAA IR ===
+function daaCardHtml(){
+  return '<div class="card" id="daaCard" style="border-left:4px solid var(--t-ncc)"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Deal Type — DAA</h3><span style="font-size:.72em;color:#999">Upload the DAA account list (SF Account ID, optional AST Support Needed) to see DAA IR separately. Adds “Deal Type” to Deep Dive filters, Show each and Compare by.</span></div>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:.8em"><input type="file" id="daaFile" accept=".csv"><button class="btn btn-s" id="daaTpl">Download Template</button><button class="btn btn-s" id="daaClear">Clear</button><span id="daaStatus" style="color:#999">No DAA list loaded</span></div>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:.8em"><button class="btn btn-v" id="daaRun">Analyze DAA</button><button class="btn btn-g" id="daaExp">Export CSV</button><button class="btn btn-s" id="daaPdf">PDF</button><span style="color:#999">Uses the Deep Dive filters below (region, week, date range…)</span></div>'+
+    '<div id="daaResults" style="margin-top:12px"></div></div>';
+}
+function daaApply(){
+  var m=window._daaMap;
+  rawData.forEach(function(r){var aid=r['SF Account ID']||'';if(!m){delete r['_deal'];delete r['_daaTag'];return}var hit=m.hasOwnProperty(aid);r['_deal']=hit?'DAA':'Non-DAA';r['_daaTag']=hit?(m[aid]||'(No tag)'):'(Non-DAA)'});
+  // refresh the Deep Dive "Deal Type" filter values
+  var old=document.getElementById('drop_ddDeal');if(old){var fg=old.closest('.fg');var box=document.getElementById('ddFilters');var vals=m?['DAA','Non-DAA']:[];var nw=createMS('ddDeal','Deal Type',vals);if(fg)box.replaceChild(nw,fg);else box.appendChild(nw)}
+}
+function initDaa(){
+  if(!window._daaMap){try{var sv=localStorage.getItem('irpda_daa');if(sv)window._daaMap=JSON.parse(sv)}catch(e){}}
+  var st=function(t,c){var e=document.getElementById('daaStatus');e.textContent=t;e.style.color=c||'#999'};
+  var touched=function(){var m=window._daaMap,seen={},n=0;rawData.forEach(function(r){var a=r['SF Account ID'];if(a&&m.hasOwnProperty(a)&&!seen[a]){seen[a]=1;n++}});return n};
+  if(window._daaMap){daaApply();st('Loaded '+Object.keys(window._daaMap).length+' DAA accounts (saved from last upload) · '+touched()+' appear in this raw.','#059669')}
+  document.getElementById('daaFile').onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var reader=new FileReader();reader.onload=function(ev){
+      var rows=parseCSV(ev.target.result);if(!rows.length){alert('Invalid CSV');return}
+      var cols=Object.keys(rows[0]),idC=null,tC=null;
+      cols.forEach(function(c){var l=c.toLowerCase();if(!idC&&(l.indexOf('account')>=0||l.indexOf('longid')>=0)&&l.indexOf('name')<0)idC=c;else if(!tC&&(l.indexOf('support')>=0||l.indexOf('tag')>=0))tC=c});
+      if(!idC){alert('CSV must have an SF Account ID column');return}
+      var m={};rows.forEach(function(r){var id=(r[idC]||'').trim();if(id)m[id]=tC?(r[tC]||'').trim():''});
+      window._daaMap=m;try{localStorage.setItem('irpda_daa',JSON.stringify(m))}catch(e2){}
+      daaApply();st('Loaded '+Object.keys(m).length+' DAA accounts · '+touched()+' appear in this raw.','#059669');
+    };reader.readAsText(f);
+  };
+  document.getElementById('daaTpl').onclick=function(){dlCSV([['SF Account ID','AST Support Needed'],['001at000004ajY4AAI','NCC & Reports'],['0011E00001qTW0WQAW','Reports only']],'daa_account_template.csv')};
+  document.getElementById('daaClear').onclick=function(){window._daaMap=null;try{localStorage.removeItem('irpda_daa')}catch(e){}daaApply();document.getElementById('daaFile').value='';document.getElementById('daaResults').innerHTML='';st('DAA list cleared.','#D97706')};
+  document.getElementById('daaRun').onclick=daaRender;
+  document.getElementById('daaExp').onclick=function(){var R=window._daaLast;if(!R){alert('Click Analyze DAA first');return}
+    dlCSV([['Group','Accounts touched','Cases','Implemented','Case IR','Recs','Rec Implemented','Rec IR','Depth','NCC IR','OPT IR','Case IR vs Non-DAA (bps)']].concat(R.map(function(g){return[g.k,g.acc,g.m.tCraw,g.m.aC,pct(g.m.cADR),g.m.tR,g.m.aR,pct(g.m.rADR),pct(g.m.dep),pct(g.no.ncc.adr),pct(g.no.opt.adr),g.vs==null?'':g.vs.toFixed(0)]})),'daa_ir.csv')};
+  document.getElementById('daaPdf').onclick=function(){printTableToPdf('daaTblWrap','Deal Type — DAA vs Non-DAA IR')};
+}
+function daaRender(){
+  var el=document.getElementById('daaResults');
+  if(!window._daaMap){el.innerHTML='<p style="color:#D97706;font-size:.85em">Upload the DAA account list first.</p>';return}
+  var data=getFilteredDD();if(!data.length){el.innerHTML='<p style="color:#e74c3c;font-size:.85em">No data matching the Deep Dive filters.</p>';return}
+  var W=[new Date(2000,0,1),new Date(2100,0,1)];
+  var mk=function(k,rows,lvl){var acc={};rows.forEach(function(r){if(r['SF Account ID'])acc[r['SF Account ID']]=1});return{k:k,lvl:lvl,m:calcMetrics(rows,W[0],W[1]),no:calcNccOpt(rows),acc:Object.keys(acc).length}};
+  var daa=data.filter(function(r){return r['_deal']==='DAA'}),non=data.filter(function(r){return r['_deal']!=='DAA'});
+  var tags={};daa.forEach(function(r){var t=r['_daaTag'];(tags[t]=tags[t]||[]).push(r)});
+  var G=[mk('DAA',daa,0)];Object.keys(tags).sort(function(a,b){return tags[b].length-tags[a].length}).forEach(function(t){G.push(mk(t,tags[t],1))});
+  G.push(mk('Non-DAA',non,0));G.push(mk('All',data,0));
+  var nonIR=G[G.length-2].m.cADR;G.forEach(function(g){g.vs=(g.k==='Non-DAA'||g.k==='All'||!g.m.tCraw)?null:(g.m.cADR-nonIR)*1e4});
+  window._daaLast=G;
+  var inList=Object.keys(window._daaMap).length,dg=G[0];
+  var h='<div class="kpi-row"><div class="kpi"><div class="lbl">DAA Accounts Touched</div><div class="val">'+dg.acc+'</div><div class="sub">of '+inList+' in list</div></div>'+
+    '<div class="kpi"><div class="lbl">DAA Case IR</div><div class="val">'+pct(dg.m.cADR)+'</div>'+(dg.vs!=null?'<div class="trend '+(dg.vs>0?'up':dg.vs<0?'down':'flat')+'">'+bStr(dg.vs)+' vs Non-DAA</div>':'')+'</div>'+
+    '<div class="kpi"><div class="lbl">DAA Rec IR</div><div class="val">'+pct(dg.m.rADR)+'</div><div class="sub">Non-DAA '+pct(G[G.length-2].m.rADR)+'</div></div>'+
+    '<div class="kpi"><div class="lbl">DAA Depth</div><div class="val">'+pct(dg.m.dep)+'</div><div class="sub">Non-DAA '+pct(G[G.length-2].m.dep)+'</div></div>'+
+    '<div class="kpi"><div class="lbl">DAA Cases</div><div class="val">'+dg.m.tCraw+'</div><div class="sub">'+dg.m.aC+' implemented</div></div></div>';
+  h+='<div class="grid-2"><div id="daaTblWrap" style="overflow:auto"><table><thead><tr><th>Group</th><th>Accts</th><th>Cases</th><th>Impl.</th><th>Case IR</th><th>vs Non-DAA</th><th>Recs</th><th>Rec IR</th><th>Depth</th><th>NCC IR</th><th>OPT IR</th></tr></thead><tbody>';
+  G.forEach(function(g){var b=g.lvl===0;h+='<tr style="'+(b?'font-weight:700;background:#F8FAFC':'')+'"><td style="'+(b?'':'padding-left:22px')+'">'+scEsc(g.k)+'</td><td>'+g.acc+'</td><td>'+g.m.tCraw+'</td><td>'+g.m.aC+'</td><td>'+pct(g.m.cADR)+'</td><td>'+(g.vs==null?'':'<span class="'+bCls(g.vs)+'">'+bStr(g.vs)+'</span>')+'</td><td>'+g.m.tR+'</td><td>'+pct(g.m.rADR)+'</td><td>'+pct(g.m.dep)+'</td><td>'+pct(g.no.ncc.adr)+'</td><td>'+pct(g.no.opt.adr)+'</td></tr>'});
+  h+='</tbody></table></div><div style="height:260px"><canvas id="daaChart"></canvas></div></div>';
+  el.innerHTML=h;
+  if(charts.daa){charts.daa.destroy();charts.daa=null}
+  var nd=G[G.length-2],lab=['Case IR','Rec IR','Depth','NCC IR','OPT IR'],v=function(g){return[g.m.cADR,g.m.rADR,g.m.dep,g.no.ncc.adr,g.no.opt.adr].map(function(x){return+(x*100).toFixed(1)})};
+  charts.daa=new Chart(document.getElementById('daaChart'),{type:'bar',data:{labels:lab,datasets:[{label:'DAA',data:v(dg),backgroundColor:'#6366F1'},{label:'Non-DAA',data:v(nd),backgroundColor:'#CBD5E1'}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:100,ticks:{callback:function(x){return x+'%'}}}},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y+'%'}}}}}});
+}
+
 // === Sales Collaboration Tracker (event follow-up with Sales/GPM) ===
 var SC_IN='padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:.95em';
 var SC_GENERIC_AE=/^cbgpm$/i; // shared Cross Border GPM alias — not an individual GPM
 function scEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function scCardHtml(){
   return '<div class="card" id="scCard" style="border-left:4px solid var(--t-opt)"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Sales Collaboration Tracker</h3><span style="font-size:.72em;color:#999">Weekly follow-up progress with Sales / GPM during an event — case-level IR by week, Sales Team and GPM</span></div>'+
-    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:.8em"><strong style="color:#666">GPM Calibration:</strong><input type="file" id="scMapFile" accept=".csv"><button class="btn btn-s" id="scMapTpl">Download Template</button><button class="btn btn-s" id="scMapClear">Clear</button><span id="scMapStatus" style="color:#999">Optional — GPM comes from AE Alias / AE Name / AE M1 Name; upload SF Account ID / GPM / GPM M1 to override</span></div>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:.8em"><strong style="color:#666">GPM Calibration:</strong><input type="file" id="scMapFile" accept=".csv"><button class="btn btn-s" id="scMapTpl">Download Template</button><button class="btn btn-s" id="scMapClear">Clear</button><span id="scMapStatus" style="color:#999">Optional — GPM comes from AE Alias / AE Name / AE M1 Name; upload SF Account ID / GPM Login / GPM M1 / AST Login to override</span></div>'+
     '<div class="dd-filters" id="scFilters" style="margin-top:10px"></div>'+
     '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.82em;margin-bottom:12px"><label style="font-weight:600;color:#666">Period:</label><select id="scMode" style="'+SC_IN+'"><option value="date">Event period</option><option value="week">Single week</option></select><span id="scDateWrap"><input type="date" id="scFrom" style="'+SC_IN+'"> to <input type="date" id="scTo" style="'+SC_IN+'"></span><select id="scWk" style="'+SC_IN+';display:none"></select><label style="font-weight:600;color:#666">Market:</label><select id="scMkt" style="'+SC_IN+'"><option value="all">All</option><option value="nonjp">Non-JP</option><option value="jp">JP only</option></select><button class="btn btn-v" id="scApply">Generate</button><button class="btn btn-g" id="scExpPivot">Export Pivot CSV</button><button class="btn btn-g" id="scExpOpen">Export Not-Implemented CSV</button><button class="btn btn-s" id="scPdf">📄 Full Report PDF</button></div>'+
     '<div id="scResults"><p style="color:#999;text-align:center;font-size:.85em">Set the event period and click Generate</p></div></div>';
@@ -1363,22 +1430,25 @@ function initCollab(){
     var reader=new FileReader();reader.onload=function(ev){
       var rows=parseCSV(ev.target.result);if(!rows.length){alert('Invalid CSV');return}
       // Calibration rows: SF Account ID, GPM, GPM M1
-      var cols=Object.keys(rows[0]),idC=null,nC=null,mC=null,lgC=null;
+      var cols=Object.keys(rows[0]),idC=null,nC=null,mC=null,lgC=null,alC=null,anC=null;
       cols.forEach(function(c){var l=c.toLowerCase();
         if(!idC&&(l.indexOf('account')>=0||l.indexOf('longid')>=0)&&l.indexOf('name')<0)idC=c;
+        else if(!alC&&l.indexOf('ast')>=0&&(l.indexOf('login')>=0||l.indexOf('alias')>=0))alC=c;
+        else if(!anC&&l.indexOf('ast')>=0&&l.indexOf('name')>=0)anC=c;
         else if(!lgC&&l.indexOf('gpm')>=0&&(l.indexOf('login')>=0||l.indexOf('alias')>=0))lgC=c;
         else if(!mC&&(/\bm1\b/.test(l)||l.indexOf('manager')>=0))mC=c;
         else if(!nC&&l.indexOf('gpm')>=0)nC=c});
-      if(!idC||!nC){alert('CSV needs columns: SF Account ID, GPM, GPM M1');return}
-      var gm1={};rows.forEach(function(r){var g=(r[nC]||'').trim(),m=mC?(r[mC]||'').trim():'';if(g&&m&&!gm1[g])gm1[g]=m});
-      var acct={},dup=0;rows.forEach(function(r){var id=(r[idC]||'').trim(),g=(r[nC]||'').trim();if(!id||!g)return;
-        if(acct[id]){if(acct[id].n!==g)dup++;return}acct[id]={n:g,m:(mC&&(r[mC]||'').trim())||gm1[g]||'',l:lgC?(r[lgC]||'').trim():''}});
+      if(!idC||(!nC&&!lgC)){alert('CSV needs columns: SF Account ID, GPM Login (or GPM Name), GPM M1');return}
+      var gk=function(r){return((nC&&r[nC])||(lgC&&r[lgC])||'').trim()};
+      var gm1={};rows.forEach(function(r){var g=gk(r),m=mC?(r[mC]||'').trim():'';if(g&&m&&!gm1[g])gm1[g]=m});
+      var acct={},dup=0;rows.forEach(function(r){var id=(r[idC]||'').trim(),g=gk(r);if(!id||!g)return;
+        if(acct[id]){if(acct[id].n!==g)dup++;return}acct[id]={n:g,m:(mC&&(r[mC]||'').trim())||gm1[g]||'',l:lgC?(r[lgC]||'').trim():'',al:alC?(r[alC]||'').trim():'',an:anC?(r[anC]||'').trim():''}});
       window._gpmCal={acct:acct,rows:Object.keys(acct).length};
       try{localStorage.setItem('irpda_gpm_cal',JSON.stringify(window._gpmCal))}catch(e){}
       scSetMapStatus('Calibration loaded: '+Object.keys(acct).length+' accounts → GPM'+(mC?' → GPM M1':'')+'.'+(dup?' '+dup+' rows gave a 2nd GPM for the same account — first one kept.':''),dup?'#D97706':'#059669');
     };reader.readAsText(f);
   };
-  document.getElementById('scMapTpl').onclick=function(){dlCSV([['SF Account ID','GPM Name','GPM M1'],['0011E00001iYPZtQAO','Easter Peng','Scarlett Yu']],'gpm_calibration_template.csv')};
+  document.getElementById('scMapTpl').onclick=function(){dlCSV([['SF Account ID','GPM Login','GPM M1','AST Login'],['0011E00001iYSgiQAG','hyongqin','Jiang Du','chaoyuya']],'gpm_calibration_template.csv')};
   document.getElementById('scMapClear').onclick=function(){window._gpmCal=null;try{localStorage.removeItem('irpda_gpm_cal');localStorage.removeItem('irpda_gpm_map')}catch(e){}document.getElementById('scMapFile').value='';scSetMapStatus('GPM calibration cleared.','#D97706')};
 
   // Scope filters
@@ -1421,12 +1491,15 @@ function scCases(rows,adCol){
   // GPM = AE Alias / AE Name / AE M1 Name from raw; calibration by SF Account ID overrides
   var cal=window._gpmCal,list=objVals(cs);
   list.forEach(function(c){var g=cal&&cal.acct[c.aid];c.src='none';
-    if(g){c.gpm=g.n;c.gm1=g.m||'(No M1)';c.src='cal'}
+    if(g){c.gpm=(g.l&&g.n===g.l&&scAeName(g.l))||g.n;c.gm1=g.m||'(No M1)';c.src='cal'}
     else if(c.rg&&!SC_GENERIC_AE.test(c.rg)){c.gpm=c.rgn||c.rg;c.gm1=c.rgm||'(No M1)';c.src='raw'}
     else{c.gpm='(Unmapped'+(c.rg?': '+c.rg:'')+')';c.gm1='(Unmapped)'}
-    c.gl=(g&&g.l)||c.rg||''});
+    c.gl=(g&&g.l)||c.rg||'';
+    if(g&&(g.an||g.al)){c.ast=g.an||scAstName(g.al)||g.al;c.sa=g.al||c.sa}if(!c.ast)c.ast='(No AST)'});
   return list;
 }
+function scAeName(login){var m=window._scAeNames;if(!m||m._n!==rawData.length){m={_n:rawData.length};rawData.forEach(function(r){var a=(r['AE Alias']||'').toLowerCase();if(a&&!m[a]&&r['AE Name'])m[a]=r['AE Name']});window._scAeNames=m}return m[String(login||'').toLowerCase()]||''}
+function scAstName(login){var m=window._scAstNames;if(!m||m._n!==rawData.length){m={_n:rawData.length};rawData.forEach(function(r){var a=(r['AST SA Alias']||'').toLowerCase();if(a&&!m[a]&&r['AST SA Name'])m[a]=r['AST SA Name']});window._scAstNames=m}return m[String(login||'').toLowerCase()]||''}
 function scStat(list){var n=list.length,a=0;for(var i=0;i<list.length;i++)if(list[i].f)a++;return{n:n,a:a,ir:n?a/n:0}}
 function scGroup(list,fn){var g={};list.forEach(function(c){var k=fn(c);if(!g[k])g[k]={k:k,items:[]};g[k].items.push(c)});return objVals(g).map(function(x){var s=scStat(x.items);x.n=s.n;x.a=s.a;x.ir=s.ir;return x})}
 function scIrBg(v){return v>=0.85?'#D1FAE5':v>=0.7?'#FEF3C7':'#FEE2E2'}
@@ -1460,7 +1533,7 @@ function runCollab(){
   // groups
   var mkRows=function(list,blist,fn){var bmap={};scGroup(blist,fn).forEach(function(g){bmap[g.k]=g});return scGroup(list,fn).map(function(g){g.b=bmap[g.k]||null;g.w={};wkCols.forEach(function(k){var it=g.items.filter(function(c){return c.wk===k});g.w[k]=it.length?scStat(it):null});return g})};
   var st=mkRows(cs,bcs,function(c){return c.st}).sort(function(a,b){return b.n-a.n});
-  var gm=mkRows(cs,bcs,function(c){return c.gm1}).map(function(m){m.kids=mkRows(m.items,bcs.filter(function(c){return c.gm1===m.k}),function(c){return c.gpm}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n});return m}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n});
+  var gm=mkRows(cs,bcs,function(c){return c.gm1}).map(function(m){m.kids=mkRows(m.items,bcs.filter(function(c){return c.gm1===m.k}),function(c){return c.gpm}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n});m.kids.forEach(function(g){g.kids=mkRows(g.items,bcs.filter(function(c){return c.gm1===m.k&&c.gpm===g.k}),function(c){return c.ast}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n})});return m}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n});
   var open=cs.filter(function(c){return!c.f}).sort(function(a,b){return(a.gm1+a.gpm).localeCompare(b.gm1+b.gpm)});
   var nCal=cs.filter(function(c){return c.src==='cal'}).length,nRaw=cs.filter(function(c){return c.src==='raw'}).length,nUn=cs.length-nCal-nRaw;
   window._scLast={all:cs,lbl:lbl,bLbl:bLbl,fileLbl:fileLbl,st:st,gm:gm,tot:tot,bt:bt,open:open,gLbl:gLbl,mLbl:mLbl,weeks:weeks,wkCols:wkCols,byWk:byWk,cps:cps};
@@ -1492,9 +1565,10 @@ function runCollab(){
   st.forEach(function(g){h+='<tr><td><strong>'+scEsc(g.k)+'</strong></td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a)+'</td><td style="font-weight:700">'+pct(g.ir)+'</td><td>'+(g.b?pct(g.b.ir):'—')+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(g)+'</td>':'')+'</tr>'});
   h+='<tr style="font-weight:700;background:#F8FAFC"><td>Total</td>'+wkCols.map(function(k){return'<td>'+pct(byWk[k].ir)+'</td>'}).join('')+'<td>'+tot.n+'</td><td>'+tot.a+'</td><td>'+(tot.n-tot.a)+'</td><td>'+pct(tot.ir)+'</td><td>'+(bt.n?pct(bt.ir):'—')+'</td><td>'+scBps(tot.ir,bt.n?bt.ir:null)+'</td>'+(wkCols.length>1?'<td>'+(latestWow!==null?scBps(byWk[lastW].ir,byWk[prevW].ir):'')+'</td>':'')+'</tr></tbody></table></div></div>';
   var gTop=[];gm.forEach(function(m){m.kids.forEach(function(g){if(g.n-g.a>0)gTop.push(g)})});gTop.sort(function(a,b){return(b.n-b.a)-(a.n-a.a)});gTop=gTop.slice(0,15);
-  h+='<div class="sc-sec" id="scSecGpm">'+scSecHead('scSecGpm','By '+mLbl+' → '+gLbl,'sorted by not-implemented cases')+'<div style="overflow:auto"><table><thead><tr><th>'+mLbl+' / '+gLbl+'</th>'+wkHead+'<th>Cases</th><th>Impl.</th><th>Not Impl.</th><th>Event IR</th><th>vs Pre</th>'+(wkCols.length>1?'<th>Latest WoW</th>':'')+'</tr></thead><tbody>';
+  h+='<div class="sc-sec" id="scSecGpm">'+scSecHead('scSecGpm','By '+mLbl+' → '+gLbl+' → AST','sorted by not-implemented cases')+'<div style="overflow:auto"><table><thead><tr><th>'+mLbl+' / '+gLbl+'</th>'+wkHead+'<th>Cases</th><th>Impl.</th><th>Not Impl.</th><th>Event IR</th><th>vs Pre</th>'+(wkCols.length>1?'<th>Latest WoW</th>':'')+'</tr></thead><tbody>';
   gm.forEach(function(m){h+='<tr style="font-weight:700;background:#F1F5F9"><td>'+scEsc(m.k)+'</td>'+mtxCells(m)+'<td>'+m.n+'</td><td>'+m.a+'</td><td style="color:var(--c-danger)">'+(m.n-m.a)+'</td><td>'+pct(m.ir)+'</td><td>'+scBps(m.ir,m.b?m.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(m)+'</td>':'')+'</tr>';
-    m.kids.forEach(function(g){h+='<tr><td style="padding-left:22px">'+scEsc(g.k)+'</td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a||'')+'</td><td>'+pct(g.ir)+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(g)+'</td>':'')+'</tr>'})});
+    m.kids.forEach(function(g){h+='<tr><td style="padding-left:22px">'+scEsc(g.k)+'</td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a||'')+'</td><td>'+pct(g.ir)+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(g)+'</td>':'')+'</tr>';
+      g.kids.forEach(function(x){h+='<tr style="font-size:.9em;color:#475569"><td style="padding-left:44px">↳ '+scEsc(x.k)+'</td>'+mtxCells(x)+'<td>'+x.n+'</td><td>'+x.a+'</td><td style="color:var(--c-danger)">'+(x.n-x.a||'')+'</td><td>'+pct(x.ir)+'</td><td>'+scBps(x.ir,x.b?x.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(x)+'</td>':'')+'</tr>'})})});
   h+='</tbody></table></div>'+(gTop.length?'<div style="font-size:.75em;color:#666;margin:12px 0 4px">Top '+gLbl+' by not-implemented cases</div><div style="height:'+Math.max(160,gTop.length*28+60)+'px"><canvas id="scGpmChart"></canvas></div>':'')+'</div>';
   // F. Case list — filter by GPM login / AST login; exported as a standalone HTML for Sales / GPM
   h+='<div class="sc-sec" id="scSecOpen">'+scSecHead('scSecOpen','Not Implemented Cases ('+open.length+')','for Sales / GPM follow-up','<span class="sc-noprint" style="display:flex;gap:6px"><button class="btn btn-s" style="font-size:.75em;padding:3px 10px" onclick="scSecPdf([\'scSecOpen\'],\'Not Implemented Cases\')">📄 PDF</button><button class="btn btn-g" style="font-size:.75em;padding:3px 10px" onclick="scExportCasesHtml()">🌐 HTML</button></span>')+
@@ -1520,8 +1594,8 @@ function scExportPivot(){
   out.push(['Event total',R.tot.n,R.tot.a,R.tot.n-R.tot.a,pct(R.tot.ir)]);out.push(['Pre-event',R.bt.n,R.bt.a,R.bt.n-R.bt.a,R.bt.n?pct(R.bt.ir):'']);
   out.push([]);out.push(['Sales Team'].concat(wh,['Not Implemented (0)','Implemented (1)','Total','Event IR','Pre-event IR']));
   R.st.forEach(function(g){out.push([g.k].concat(R.wkCols.map(function(k){return g.w[k]?pct(g.w[k].ir):''}),[g.n-g.a,g.a,g.n,pct(g.ir),g.b?pct(g.b.ir):'']))});
-  out.push([]);out.push([R.mLbl,R.gLbl].concat(wh,['Not Implemented (0)','Implemented (1)','Total','Event IR']));
-  R.gm.forEach(function(m){out.push([m.k,'(subtotal)'].concat(R.wkCols.map(function(k){return m.w[k]?pct(m.w[k].ir):''}),[m.n-m.a,m.a,m.n,pct(m.ir)]));m.kids.forEach(function(g){out.push([m.k,g.k].concat(R.wkCols.map(function(k){return g.w[k]?pct(g.w[k].ir):''}),[g.n-g.a,g.a,g.n,pct(g.ir)]))})});
+  out.push([]);out.push([R.mLbl,R.gLbl,'AST'].concat(wh,['Not Implemented (0)','Implemented (1)','Total','Event IR']));
+  var wv=function(x){return R.wkCols.map(function(k){return x.w[k]?pct(x.w[k].ir):''})};R.gm.forEach(function(m){out.push([m.k,'(subtotal)',''].concat(wv(m),[m.n-m.a,m.a,m.n,pct(m.ir)]));m.kids.forEach(function(g){out.push([m.k,g.k,'(subtotal)'].concat(wv(g),[g.n-g.a,g.a,g.n,pct(g.ir)]));(g.kids||[]).forEach(function(x){out.push([m.k,g.k,x.k].concat(wv(x),[x.n-x.a,x.a,x.n,pct(x.ir)]))})})});
   dlCSV(out,'sales_collab_pivot_'+R.fileLbl+'.csv');
 }
 function scExportCasesHtml(){
@@ -1574,7 +1648,7 @@ function getFilteredDD(){
   return data;
 }
 
-var CMP_DIMS=[{id:'_reg',lbl:'Region'},{id:'_seg',lbl:'Segment'},{id:'Country',lbl:'Country'},{id:'Country POS',lbl:'Country POS'},{id:'AST M1 Name',lbl:'M1'},{id:'AST M2 Name',lbl:'M2'},{id:'Sales Team',lbl:'Sales Team'},{id:'Product',lbl:'Product'},{id:'Recommendation Bucket',lbl:'Rec Bucket'},{id:'Cross Border?',lbl:'Cross Border?'}];
+var CMP_DIMS=[{id:'_reg',lbl:'Region'},{id:'_seg',lbl:'Segment'},{id:'Country',lbl:'Country'},{id:'Country POS',lbl:'Country POS'},{id:'AST M1 Name',lbl:'M1'},{id:'AST M2 Name',lbl:'M2'},{id:'Sales Team',lbl:'Sales Team'},{id:'Product',lbl:'Product'},{id:'Recommendation Bucket',lbl:'Rec Bucket'},{id:'Cross Border?',lbl:'Cross Border?'},{id:'_deal',lbl:'Deal Type'}];
 function runDD(T){
   var data=getFilteredDD();
   if(!data.length){document.getElementById('ddResults').innerHTML='<p style="color:#e74c3c;text-align:center">No data matching filters</p>';return}
@@ -1619,7 +1693,7 @@ function runDD(T){
 
   // Breakdown table
   var bdCol=document.getElementById('ddBD').value;
-  var bdLabel=bdCol==='_tag'?'Support Tag':bdCol==='_team'?'Custom Team':bdCol;
+  var bdLabel=bdCol==='_tag'?'Support Tag':bdCol==='_team'?'Custom Team':bdCol==='_deal'?'Deal Type':bdCol==='_daaTag'?'DAA Support Tag':bdCol;
   var groups={};for(var gi=0;gi<data.length;gi++){var k=data[gi][bdCol]||'(empty)';if(!groups[k])groups[k]=[];groups[k].push(data[gi])}
   var bdRows=Object.keys(groups).map(function(key){
     var rows=groups[key];var gm=calcMetrics(rows,new Date(2000,0,1),new Date(2100,0,1));
