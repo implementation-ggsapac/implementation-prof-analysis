@@ -1416,7 +1416,7 @@ function scCardHtml(){
   return '<div class="card" id="scCard" style="border-left:4px solid var(--t-opt)"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Sales Collaboration Tracker</h3><span style="font-size:.72em;color:#999">Weekly follow-up progress with Sales / GPM during an event — case-level IR by week, Sales Team and GPM</span></div>'+
     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:.8em"><strong style="color:#666">GPM Calibration:</strong><input type="file" id="scMapFile" accept=".csv"><button class="btn btn-s" id="scMapTpl">Download Template</button><button class="btn btn-s" id="scMapClear">Clear</button><span id="scMapStatus" style="color:#999">Optional — GPM comes from AE Alias / AE Name / AE M1 Name; upload SF Account ID / GPM Login / GPM M1 / AST Login to override</span></div>'+
     '<div class="dd-filters" id="scFilters" style="margin-top:10px"></div>'+
-    '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.82em;margin-bottom:12px"><label style="font-weight:600;color:#666">Period:</label><select id="scMode" style="'+SC_IN+'"><option value="date">Event period</option><option value="week">Single week</option></select><span id="scDateWrap"><input type="date" id="scFrom" style="'+SC_IN+'"> to <input type="date" id="scTo" style="'+SC_IN+'"></span><select id="scWk" style="'+SC_IN+';display:none"></select><label style="font-weight:600;color:#666">Market:</label><select id="scMkt" style="'+SC_IN+'"><option value="all">All</option><option value="nonjp">Non-JP</option><option value="jp">JP only</option></select><button class="btn btn-v" id="scApply">Generate</button><button class="btn btn-g" id="scExpPivot">Export Pivot CSV</button><button class="btn btn-g" id="scExpOpen">Export Not-Implemented CSV</button><button class="btn btn-s" id="scPdf">📄 Full Report PDF</button></div>'+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.82em;margin-bottom:12px"><label style="font-weight:600;color:#666">Period:</label><select id="scMode" style="'+SC_IN+'"><option value="date">Event period</option><option value="week">Single week</option></select><span id="scDateWrap"><input type="date" id="scFrom" style="'+SC_IN+'"> to <input type="date" id="scTo" style="'+SC_IN+'"></span><select id="scWk" style="'+SC_IN+';display:none"></select><label style="font-weight:600;color:#666">Market:</label><select id="scMkt" style="'+SC_IN+'"><option value="all">All</option><option value="nonjp">Non-JP</option><option value="jp">JP only</option></select><button class="btn btn-v" id="scApply">Generate</button><button class="btn btn-g" id="scExpPivot">Export Pivot CSV</button><button class="btn btn-g" id="scExpOpen">Export Not-Implemented CSV</button><button class="btn btn-s" id="scPdf">📋 Copy full report</button></div>'+
     '<div id="scResults"><p style="color:#999;text-align:center;font-size:.85em">Set the event period and click Generate</p></div></div>';
 }
 function scColOf(re){var ks=rawData.length?Object.keys(rawData[0]):[];for(var i=0;i<ks.length;i++){if(re.test(ks[i]))return ks[i]}return null}
@@ -1472,7 +1472,7 @@ function initCollab(){
     var out=[['GPM M1','GPM','GPM Login','Sales Team','Sales subteam','SF Account ID','Account','Case ID','AST','Publisher Alias','Rec Bucket','Country POS','Week','Delivered Date']];
     R.open.forEach(function(c){out.push([c.gm1,c.gpm,c.rg||'',c.st,c.sub,c.aid,c.acct,c.id,c.ast,c.pa,Object.keys(c.bk).join(' / '),c.cty,c.wk?getWeek(pD(c.wk)):'',fmt(c.del)])});
     dlCSV(out,'sales_collab_not_implemented_'+R.fileLbl+'.csv')};
-  document.getElementById('scPdf').onclick=function(){scSecPdf(null,'Sales Collaboration Tracker')};
+  document.getElementById('scPdf').onclick=function(){scCopyHtml(null)};
 }
 function scScope(){
   var defs=window._scDefs||[],flt=[];defs.forEach(function(fd){var s=getMS(fd.id);if(s.length)flt.push({col:fd.col,vals:s})});
@@ -1503,7 +1503,8 @@ function scStat(list){var n=list.length,a=0;for(var i=0;i<list.length;i++)if(lis
 function scGroup(list,fn){var g={};list.forEach(function(c){var k=fn(c);if(!g[k])g[k]={k:k,items:[]};g[k].items.push(c)});return objVals(g).map(function(x){var s=scStat(x.items);x.n=s.n;x.a=s.a;x.ir=s.ir;return x})}
 function scIrBg(v){return v>=0.85?'#D1FAE5':v>=0.7?'#FEF3C7':'#FEE2E2'}
 function scBps(cur,prev){if(prev==null)return'<span style="color:#999">—</span>';var w=(cur-prev)*1e4;return'<span class="'+bCls(w)+'" style="font-weight:700">'+bStr(w)+'</span>'}
-function scSecHead(id,title,note,btn){return'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:20px 0 8px"><h4 style="margin:0">'+title+(note?' <span style="font-weight:400;font-size:.8em;color:#999">'+note+'</span>':'')+'</h4>'+(btn||'<button class="btn btn-s sc-noprint" style="font-size:.75em;padding:3px 10px" onclick="scSecPdf([\''+id+'\'],\''+title.replace(/'/g,'')+'\')">📄 PDF</button>')+'</div>'}
+function scToast(t){var d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999';document.body.appendChild(d);setTimeout(function(){d.remove()},2500)}
+function scSecHead(id,title,note,btn){return'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:20px 0 8px"><h4 style="margin:0">'+title+(note?' <span style="font-weight:400;font-size:.8em;color:#999">'+note+'</span>':'')+'</h4><span class="sc-noprint" style="display:flex;gap:6px"><button class="btn btn-v" style="font-size:.75em;padding:3px 10px" onclick="scCopyHtml([\''+id+'\'])">📋 Copy for email</button>'+(btn||'')+'</span></div>'}
 function runCollab(){
   var scope=scScope(),mode=document.getElementById('scMode').value,d0,d1,lbl,fileLbl;
   if(mode==='week'){var k=document.getElementById('scWk').value;if(!k){alert('No weeks in data');return}d1=pD(k);d0=new Date(d1.getTime()-6*864e5);lbl=getWeek(d1)+' (week ending '+k+')';fileLbl=getWeek(d1)}
@@ -1563,14 +1564,21 @@ function runCollab(){
   h+='<div class="sc-sec" id="scSecSt">'+scSecHead('scSecSt','By Sales Team','weekly IR, event total and change')+'<div style="height:'+Math.max(160,st.length*34+60)+'px;margin-bottom:10px"><canvas id="scStChart"></canvas></div><div style="overflow:auto"><table><thead><tr><th>Sales Team</th>'+wkHead+'<th>Cases</th><th>Impl.</th><th>Not Impl.</th><th>Event IR</th><th>Pre-event IR</th><th>vs Pre</th>'+(wkCols.length>1?'<th>Latest WoW</th>':'')+'</tr></thead><tbody>';
   st.forEach(function(g){h+='<tr><td><strong>'+scEsc(g.k)+'</strong></td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a)+'</td><td style="font-weight:700">'+pct(g.ir)+'</td><td>'+(g.b?pct(g.b.ir):'—')+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(g)+'</td>':'')+'</tr>'});
   h+='<tr style="font-weight:700;background:#F8FAFC"><td>Total</td>'+wkCols.map(function(k){return'<td>'+pct(byWk[k].ir)+'</td>'}).join('')+'<td>'+tot.n+'</td><td>'+tot.a+'</td><td>'+(tot.n-tot.a)+'</td><td>'+pct(tot.ir)+'</td><td>'+(bt.n?pct(bt.ir):'—')+'</td><td>'+scBps(tot.ir,bt.n?bt.ir:null)+'</td>'+(wkCols.length>1?'<td>'+(latestWow!==null?scBps(byWk[lastW].ir,byWk[prevW].ir):'')+'</td>':'')+'</tr></tbody></table></div></div>';
-  var gTop=[];gm.forEach(function(m){m.kids.forEach(function(g){if(g.n-g.a>0)gTop.push(g)})});gTop.sort(function(a,b){return(b.n-b.a)-(a.n-a.a)});gTop=gTop.slice(0,15);
-  h+='<div class="sc-sec" id="scSecGpm">'+scSecHead('scSecGpm','By '+mLbl+' → '+gLbl+' → AST','sorted by not-implemented cases')+'<div style="overflow:auto"><table><thead><tr><th>'+mLbl+' / '+gLbl+'</th>'+wkHead+'<th>Cases</th><th>Impl.</th><th>Not Impl.</th><th>Event IR</th><th>vs Pre</th>'+(wkCols.length>1?'<th>Latest WoW</th>':'')+'</tr></thead><tbody>';
-  gm.forEach(function(m){h+='<tr style="font-weight:700;background:#F1F5F9"><td>'+scEsc(m.k)+'</td>'+mtxCells(m)+'<td>'+m.n+'</td><td>'+m.a+'</td><td style="color:var(--c-danger)">'+(m.n-m.a)+'</td><td>'+pct(m.ir)+'</td><td>'+scBps(m.ir,m.b?m.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(m)+'</td>':'')+'</tr>';
-    m.kids.forEach(function(g){h+='<tr><td style="padding-left:22px">'+scEsc(g.k)+'</td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a||'')+'</td><td>'+pct(g.ir)+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(g)+'</td>':'')+'</tr>';
-      g.kids.forEach(function(x){h+='<tr style="font-size:.9em;color:#475569"><td style="padding-left:44px">↳ '+scEsc(x.k)+'</td>'+mtxCells(x)+'<td>'+x.n+'</td><td>'+x.a+'</td><td style="color:var(--c-danger)">'+(x.n-x.a||'')+'</td><td>'+pct(x.ir)+'</td><td>'+scBps(x.ir,x.b?x.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(x)+'</td>':'')+'</tr>'})})});
-  h+='</tbody></table></div>'+(gTop.length?'<div style="font-size:.75em;color:#666;margin:12px 0 4px">Top '+gLbl+' by not-implemented cases</div><div style="height:'+Math.max(160,gTop.length*28+60)+'px"><canvas id="scGpmChart"></canvas></div>':'')+'</div>';
+  // E. GPM rows — same table style as By Sales Team: weekly IR per GPM (colour-coded), M1 spans its GPMs, ASTs with open cases inline
+  var td=' style="padding:6px 8px;vertical-align:top"',tdn=' style="padding:6px 8px;vertical-align:top;white-space:nowrap"',done=[];
+  var wkTd=function(g){return wkCols.map(function(k){var x=g.w[k];return x?'<td title="'+x.a+'/'+x.n+'" style="padding:6px 8px;vertical-align:top;text-align:center;background:'+scIrBg(x.ir)+'">'+pct(x.ir)+'</td>':'<td style="padding:6px 8px;vertical-align:top;text-align:center;color:#ccc">—</td>'}).join('')};
+  h+='<div class="sc-sec" id="scSecGpm">'+scSecHead('scSecGpm','By '+mLbl+' → '+gLbl+' → AST','weekly IR of GPMs with open cases')+
+    '<div style="overflow:auto"><table style="width:auto"><thead><tr><th'+tdn+'>'+mLbl+'</th><th'+tdn+'>'+gLbl+'</th>'+wkCols.map(function(k){return'<th'+tdn+'>'+wkLbl(k)+'</th>'}).join('')+'<th'+tdn+'>Cases</th><th'+tdn+'>Open</th><th'+tdn+'>Event IR</th><th'+tdn+'>AST (open / total)</th></tr></thead><tbody>';
+  gm.forEach(function(m){var openG=m.kids.filter(function(g){return g.n>g.a});m.kids.forEach(function(g){if(g.n===g.a)done.push(g.k+' ('+g.n+')')});if(!openG.length)return;
+    openG.forEach(function(g,gi){
+      var astOpen=(g.kids||[]).filter(function(x){return x.n>x.a});
+      h+='<tr>'+(gi===0?'<td rowspan="'+openG.length+'" style="padding:6px 8px;vertical-align:top;white-space:nowrap;background:#F1F5F9"><strong>'+scEsc(m.k)+'</strong><div style="font-size:.85em;color:#64748B;margin-top:2px">'+(m.n-m.a)+' open / '+m.n+' · <strong style="color:#0F172A">'+pct(m.ir)+'</strong></div></td>':'')+
+        '<td'+tdn+'><strong>'+scEsc(g.k)+'</strong></td>'+wkTd(g)+'<td'+tdn+'>'+g.n+'</td><td style="padding:6px 8px;vertical-align:top;color:var(--c-danger);font-weight:600">'+(g.n-g.a)+'</td>'+
+        '<td style="padding:6px 8px;vertical-align:top;font-weight:700;background:'+scIrBg(g.ir)+'">'+pct(g.ir)+'</td>'+
+        '<td'+td+'>'+astOpen.map(function(x){return scEsc(x.k)+' <span style="color:var(--c-danger);font-weight:600">'+(x.n-x.a)+'</span>/'+x.n}).join('<br>')+'</td></tr>'})});
+  h+='</tbody></table></div>'+(done.length?'<div style="margin-top:8px;font-size:.78em;color:var(--c-success)">✓ All implemented: '+scEsc(done.join(' · '))+'</div>':'')+'</div>';
   // F. Case list — filter by GPM login / AST login; exported as a standalone HTML for Sales / GPM
-  h+='<div class="sc-sec" id="scSecOpen">'+scSecHead('scSecOpen','Not Implemented Cases ('+open.length+')','for Sales / GPM follow-up','<span class="sc-noprint" style="display:flex;gap:6px"><button class="btn btn-s" style="font-size:.75em;padding:3px 10px" onclick="scSecPdf([\'scSecOpen\'],\'Not Implemented Cases\')">📄 PDF</button><button class="btn btn-g" style="font-size:.75em;padding:3px 10px" onclick="scExportCasesHtml()">🌐 HTML</button></span>')+
+  h+='<div class="sc-sec" id="scSecOpen">'+scSecHead('scSecOpen','Not Implemented Cases ('+open.length+')','for Sales / GPM follow-up','<button class="btn btn-g" style="font-size:.75em;padding:3px 10px" onclick="scExportCasesHtml()">🌐 HTML</button>')+
     '<div style="margin-bottom:8px;font-size:.8em"><input id="scCaseQ" placeholder="Filter by GPM login or AST login…" style="'+SC_IN+';width:260px"> <span id="scCaseQn" style="color:#999"></span></div><div style="max-height:420px;overflow:auto"><table><thead><tr><th>'+mLbl+'</th><th>'+gLbl+'</th><th>GPM Login</th><th>AST</th><th>AST Login</th><th>Sales Team</th><th>Account</th><th>Case ID</th><th>Rec Bucket</th><th>Week</th></tr></thead><tbody id="scCaseBody">';
   open.forEach(function(c){h+='<tr data-q="'+scEsc([c.gl,c.sa,c.pa].join(' ').toLowerCase())+'"><td>'+scEsc(c.gm1)+'</td><td>'+scEsc(c.gpm)+'</td><td>'+scEsc(c.gl)+'</td><td>'+scEsc(c.ast)+'</td><td>'+scEsc(c.sa||c.pa)+'</td><td>'+scEsc(c.st)+'</td><td>'+scEsc(c.acct)+'</td><td style="font-size:.8em">'+scEsc(c.id)+'</td><td>'+scEsc(Object.keys(c.bk).join(' / '))+'</td><td>'+(c.wk?wkLbl(c.wk):'')+'</td></tr>'});
   h+='</tbody></table></div></div>';
@@ -1583,7 +1591,6 @@ function runCollab(){
   charts.scProg=new Chart(document.getElementById('scProgChart'),{type:'line',data:{labels:cps.map(function(c){return wkLbl(c.k)}),datasets:[{label:'IR of delivered cases (as of week end)',data:cps.map(function(c){return+(c.ir*100).toFixed(1)}),borderColor:'#6366F1',backgroundColor:'#6366F120',fill:true,tension:.3,pointRadius:4}]},options:{animation:anim,responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:100,ticks:{callback:function(v){return v+'%'}}}},plugins:{legend:{position:'bottom'}}}});
   var stack=function(labels,impl,notImpl,irs){return{type:'bar',data:{labels:labels,datasets:[{label:'Implemented',data:impl,backgroundColor:'#059669'},{label:'Not Implemented',data:notImpl,backgroundColor:'#FCA5A5'}]},options:{animation:anim,indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,grid:{color:'#F1F5F9'}},y:{stacked:true,grid:{display:false}}},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{afterBody:function(items){return'IR: '+pct(irs[items[0].dataIndex])}}}}}}};
   charts.scSt=new Chart(document.getElementById('scStChart'),stack(st.map(function(g){return g.k}),st.map(function(g){return g.a}),st.map(function(g){return g.n-g.a}),st.map(function(g){return g.ir})));
-  if(gTop.length)charts.scGpm=new Chart(document.getElementById('scGpmChart'),stack(gTop.map(function(g){return g.k}),gTop.map(function(g){return g.a}),gTop.map(function(g){return g.n-g.a}),gTop.map(function(g){return g.ir})));
 }
 function scExportPivot(){
   var R=window._scLast;if(!R){alert('Click Generate first');return}
@@ -1621,20 +1628,35 @@ function scExportCasesHtml(){
     'document.getElementById("q").oninput=r;document.getElementById("all").onchange=r;r();<\/script></body></html>';
   var bl=new Blob([page],{type:'text/html;charset=utf-8'}),lk=document.createElement('a');lk.href=URL.createObjectURL(bl);lk.download='sales_collab_cases_'+R.fileLbl+'.html';lk.click();
 }
-// Email-ready PDF: fixed-width page, charts as images, no scroll boxes. ids=null → all sections
-function scSecPdf(ids,title){
+// Copy sections as email-ready HTML: computed styles are inlined so the formatting survives pasting into Outlook.
+// ids=null → all sections. Charts are pasted as images.
+var SC_CSS=['border-collapse','border-spacing','color','background-color','font-weight','font-size','font-style','text-align','vertical-align','white-space','padding-top','padding-right','padding-bottom','padding-left','border-top','border-right','border-bottom','border-left','border-radius','width','height','display'];
+function scInline(src,dst){var cs=window.getComputedStyle(src),st='';
+  for(var i=0;i<SC_CSS.length;i++){var k=SC_CSS[i],v=cs.getPropertyValue(k);if(!v)continue;
+    if((k==='width'||k==='height')&&src.tagName!=='IMG')continue; // let tables size themselves
+    if(k.indexOf('border')===0&&v.indexOf('none')>=0)continue;if(k==='background-color'&&v==='rgba(0, 0, 0, 0)')continue;if(k==='border-radius'&&v==='0px')continue;
+    st+=k+':'+v+';'}
+  dst.setAttribute('style',st+'font-family:Calibri,Arial,sans-serif');var a=src.children,b=dst.children;for(var n=0;n<a.length&&n<b.length;n++)scInline(a[n],b[n])}
+function scCopyHtml(ids){
   var R=window._scLast;if(!R){alert('Click Generate first');return}
   var secs=ids?ids.map(function(i){return document.getElementById(i)}):Array.prototype.slice.call(document.querySelectorAll('#scResults .sc-sec'));
-  var body='';
-  secs.forEach(function(src,si){if(!src)return;var clone=src.cloneNode(true),c1=src.querySelectorAll('canvas'),c2=clone.querySelectorAll('canvas');
-    for(var i=0;i<c1.length;i++){var img=document.createElement('img');img.src=c1[i].toDataURL('image/png');img.style.cssText='width:100%;height:100%;object-fit:contain';c2[i].parentNode.replaceChild(img,c2[i])}
-    var bx=clone.querySelectorAll('[style*="overflow"]');for(var j=0;j<bx.length;j++){bx[j].style.maxHeight='none';bx[j].style.overflow='visible'}
-    var nb=clone.querySelectorAll('.sc-noprint');for(var q=0;q<nb.length;q++)nb[q].parentNode.removeChild(nb[q]);
-    body+='<div class="sec"'+(ids||si===0?'':' style="page-break-before:always"')+'>'+clone.innerHTML+'</div>'});
-  var css='';var ss=document.querySelectorAll('style');for(var k=0;k<ss.length;k++)css+=ss[k].outerHTML;
-  var w=window.open('','_blank');if(!w){alert('Popup blocked — allow popups to export PDF');return}
-  w.document.write('<html><head><title>'+scEsc(title)+' — '+scEsc(R.lbl)+'</title>'+css+'<style>body{background:#fff;margin:0;padding:24px}.page{max-width:1100px;margin:0 auto}.sec h4{font-size:15px}.kpi{box-shadow:none}@page{size:landscape;margin:12mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body><div class="page"><div style="border-bottom:3px solid #EA580C;padding-bottom:8px;margin-bottom:6px"><div style="font-size:18px;font-weight:800">'+scEsc(title)+'</div><div style="font-size:12px;color:#666">'+scEsc(R.lbl)+' · baseline '+scEsc(R.bLbl)+' · generated '+fmt(new Date())+'</div></div>'+body+'</div></body></html>');
-  w.document.close();w.focus();setTimeout(function(){w.print()},600);
+  var box=document.createElement('div');box.style.cssText='position:fixed;left:-10000px;top:0;width:1000px;background:#fff';document.body.appendChild(box);
+  var hd=document.createElement('div');hd.innerHTML='<div style="font-family:Calibri,Arial,sans-serif;font-size:16px;font-weight:700">Sales Collaboration Tracker</div><div style="font-family:Calibri,Arial,sans-serif;font-size:12px;color:#64748B;margin-bottom:8px">'+scEsc(R.lbl)+' · generated '+fmt(new Date())+'</div>';box.appendChild(hd);
+  secs.forEach(function(src){if(!src)return;
+    // expand scroll boxes so the full content is measured, then clone with inlined styles
+    var bx=src.querySelectorAll('[style*="overflow"]'),keep=[];for(var j=0;j<bx.length;j++){keep.push([bx[j],bx[j].style.maxHeight,bx[j].style.overflow]);bx[j].style.maxHeight='none';bx[j].style.overflow='visible'}
+    var cl=src.cloneNode(true);scInline(src,cl);
+    keep.forEach(function(k){k[0].style.maxHeight=k[1];k[0].style.overflow=k[2]});
+    var c1=src.querySelectorAll('canvas'),c2=cl.querySelectorAll('canvas');for(var i=0;i<c1.length;i++){var img=document.createElement('img');img.src=c1[i].toDataURL('image/png');img.width=Math.round(c1[i].clientWidth*.75);img.style.cssText='display:block;max-width:100%';c2[i].parentNode.replaceChild(img,c2[i])}
+    var nb=cl.querySelectorAll('.sc-noprint,input');for(var q=0;q<nb.length;q++)nb[q].parentNode.removeChild(nb[q]);
+    var hide=cl.querySelectorAll('tr[style*="display: none"]');for(var z=0;z<hide.length;z++)hide[z].parentNode.removeChild(hide[z]);
+    box.appendChild(cl)});
+  var range=document.createRange();range.selectNodeContents(box);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+  var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+  sel.removeAllRanges();
+  if(ok)scToast('Copied — paste into your email (Ctrl+V)');
+  else{var w=window.open('','_blank');if(w){w.document.write('<html><body>'+box.innerHTML+'</body></html>');w.document.close();alert('Copy was blocked — select all (Ctrl+A) in the new window and copy (Ctrl+C)')}}
+  box.parentNode.removeChild(box);
 }
 
 function getFilteredDD(){
