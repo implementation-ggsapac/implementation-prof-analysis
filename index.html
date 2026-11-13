@@ -1491,14 +1491,13 @@ function scCases(rows,adCol){
   // GPM = AE Alias / AE Name / AE M1 Name from raw; calibration by SF Account ID overrides
   var cal=window._gpmCal,list=objVals(cs);
   list.forEach(function(c){var g=cal&&cal.acct[c.aid];c.src='none';
-    if(g){c.gpm=(g.l&&g.n===g.l&&scAeName(g.l))||g.n;c.gm1=g.m||'(No M1)';c.src='cal'}
-    else if(c.rg&&!SC_GENERIC_AE.test(c.rg)){c.gpm=c.rgn||c.rg;c.gm1=c.rgm||'(No M1)';c.src='raw'}
+    if(g){c.gpm=g.l||g.n;c.gm1=g.m||'(No M1)';c.src='cal'}
+    else if(c.rg&&!SC_GENERIC_AE.test(c.rg)){c.gpm=c.rg;c.gm1=c.rgm||'(No M1)';c.src='raw'}
     else{c.gpm='(Unmapped'+(c.rg?': '+c.rg:'')+')';c.gm1='(Unmapped)'}
     c.gl=g?(g.l||''):(c.rg&&!SC_GENERIC_AE.test(c.rg)?c.rg:''); // never show the shared cbgpm alias as a GPM login
     if(g&&(g.an||g.al)){c.ast=g.an||scAstName(g.al)||g.al;c.sa=g.al||c.sa}if(!c.ast)c.ast='(No AST)'});
   return list;
 }
-function scAeName(login){var m=window._scAeNames;if(!m||m._n!==rawData.length){m={_n:rawData.length};rawData.forEach(function(r){var a=(r['AE Alias']||'').toLowerCase();if(a&&!m[a]&&r['AE Name'])m[a]=r['AE Name']});window._scAeNames=m}return m[String(login||'').toLowerCase()]||''}
 function scAstName(login){var m=window._scAstNames;if(!m||m._n!==rawData.length){m={_n:rawData.length};rawData.forEach(function(r){var a=(r['AST SA Alias']||'').toLowerCase();if(a&&!m[a]&&r['AST SA Name'])m[a]=r['AST SA Name']});window._scAstNames=m}return m[String(login||'').toLowerCase()]||''}
 function scStat(list){var n=list.length,a=0;for(var i=0;i<list.length;i++)if(list[i].f)a++;return{n:n,a:a,ir:n?a/n:0}}
 function scGroup(list,fn){var g={};list.forEach(function(c){var k=fn(c);if(!g[k])g[k]={k:k,items:[]};g[k].items.push(c)});return objVals(g).map(function(x){var s=scStat(x.items);x.n=s.n;x.a=s.a;x.ir=s.ir;return x})}
