@@ -1494,7 +1494,7 @@ function scCases(rows,adCol){
     if(g){c.gpm=(g.l&&g.n===g.l&&scAeName(g.l))||g.n;c.gm1=g.m||'(No M1)';c.src='cal'}
     else if(c.rg&&!SC_GENERIC_AE.test(c.rg)){c.gpm=c.rgn||c.rg;c.gm1=c.rgm||'(No M1)';c.src='raw'}
     else{c.gpm='(Unmapped'+(c.rg?': '+c.rg:'')+')';c.gm1='(Unmapped)'}
-    c.gl=(g&&g.l)||c.rg||'';
+    c.gl=g?(g.l||''):(c.rg&&!SC_GENERIC_AE.test(c.rg)?c.rg:''); // never show the shared cbgpm alias as a GPM login
     if(g&&(g.an||g.al)){c.ast=g.an||scAstName(g.al)||g.al;c.sa=g.al||c.sa}if(!c.ast)c.ast='(No AST)'});
   return list;
 }
