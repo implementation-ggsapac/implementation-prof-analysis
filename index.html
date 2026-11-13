@@ -1533,7 +1533,7 @@ function runCollab(){
   // groups
   var mkRows=function(list,blist,fn){var bmap={};scGroup(blist,fn).forEach(function(g){bmap[g.k]=g});return scGroup(list,fn).map(function(g){g.b=bmap[g.k]||null;g.w={};wkCols.forEach(function(k){var it=g.items.filter(function(c){return c.wk===k});g.w[k]=it.length?scStat(it):null});return g})};
   var st=mkRows(cs,bcs,function(c){return c.st}).sort(function(a,b){return b.n-a.n});
-  var gm=mkRows(cs,bcs,function(c){return c.gm1}).map(function(m){m.kids=mkRows(m.items,bcs.filter(function(c){return c.gm1===m.k}),function(c){return c.gpm}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n});m.kids.forEach(function(g){g.kids=mkRows(g.items,bcs.filter(function(c){return c.gm1===m.k&&c.gpm===g.k}),function(c){return c.ast}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n})});return m}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n});
+  var gm=mkRows(cs,bcs,function(c){return c.gm1}).map(function(m){m.kids=mkRows(m.items,bcs.filter(function(c){return c.gm1===m.k}),function(c){return c.gpm}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n});m.kids.forEach(function(g){g.kids=mkRows(g.items,bcs.filter(function(c){return c.gm1===m.k&&c.gpm===g.k}),function(c){return c.sa||c.ast}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n})});return m}).sort(function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n});
   var open=cs.filter(function(c){return!c.f}).sort(function(a,b){return(a.gm1+a.gpm).localeCompare(b.gm1+b.gpm)});
   var nCal=cs.filter(function(c){return c.src==='cal'}).length,nRaw=cs.filter(function(c){return c.src==='raw'}).length,nUn=cs.length-nCal-nRaw;
   window._scLast={all:cs,lbl:lbl,bLbl:bLbl,fileLbl:fileLbl,st:st,gm:gm,tot:tot,bt:bt,open:open,gLbl:gLbl,mLbl:mLbl,weeks:weeks,wkCols:wkCols,byWk:byWk,cps:cps};
@@ -1568,7 +1568,7 @@ function runCollab(){
   var td=' style="padding:6px 8px;vertical-align:top"',tdn=' style="padding:6px 8px;vertical-align:top;white-space:nowrap"',done=[];
   var wkTd=function(g){return wkCols.map(function(k){var x=g.w[k];return x?'<td title="'+x.a+'/'+x.n+'" style="padding:6px 8px;vertical-align:top;text-align:center;background:'+scIrBg(x.ir)+'">'+pct(x.ir)+'</td>':'<td style="padding:6px 8px;vertical-align:top;text-align:center;color:#ccc">—</td>'}).join('')};
   h+='<div class="sc-sec" id="scSecGpm">'+scSecHead('scSecGpm','By '+mLbl+' → '+gLbl+' → AST','weekly IR of GPMs with open cases')+
-    '<div style="overflow:auto"><table style="width:auto"><thead><tr><th'+tdn+'>'+mLbl+'</th><th'+tdn+'>'+gLbl+'</th>'+wkCols.map(function(k){return'<th'+tdn+'>'+wkLbl(k)+'</th>'}).join('')+'<th'+tdn+'>Cases</th><th'+tdn+'>Open</th><th'+tdn+'>Event IR</th><th'+tdn+'>AST (open / total)</th></tr></thead><tbody>';
+    '<div style="overflow:auto"><table style="width:auto"><thead><tr><th'+tdn+'>'+mLbl+'</th><th'+tdn+'>'+gLbl+'</th>'+wkCols.map(function(k){return'<th'+tdn+'>'+wkLbl(k)+'</th>'}).join('')+'<th'+tdn+'>Cases</th><th'+tdn+'>Open</th><th'+tdn+'>Event IR</th><th'+tdn+'>AST login (open / total)</th></tr></thead><tbody>';
   gm.forEach(function(m){var openG=m.kids.filter(function(g){return g.n>g.a});m.kids.forEach(function(g){if(g.n===g.a)done.push(g.k+' ('+g.n+')')});if(!openG.length)return;
     openG.forEach(function(g,gi){
       var astOpen=(g.kids||[]).filter(function(x){return x.n>x.a});
