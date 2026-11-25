@@ -1154,20 +1154,22 @@ function renderMgmt(){
       // Most common M2 per M1 (before remapping) — a remapped AST moves under its new M1's M2
       var m1M2={},m1M2c={};rawData.forEach(function(r){var a=r['AST M1 Name'],b=r['AST M2 Name'];if(a&&b){var c=m1M2c[a]=m1M2c[a]||{};c[b]=(c[b]||0)+1}});
       Object.keys(m1M2c).forEach(function(a){var best=null,bn=0;for(var b in m1M2c[a])if(m1M2c[a][b]>bn){bn=m1M2c[a][b];best=b}m1M2[a]=best});
-      var m2Moved=0;
+      var m2Moved=0,notIn=0,mappedM1={};Object.keys(map).forEach(function(k){mappedM1[map[k]]=1});
       // Second pass: apply M1 mapping + move M2 with the new M1 + fill empty M1/M2
       rawData.forEach(function(r){
         var pa=(r['Publisher Alias']||'').toLowerCase();
         var oldM1=r['AST M1 Name'];
         if(map[pa])r['AST M1 Name']=map[pa];
         if(map[pa]&&map[pa]!==oldM1&&m1M2[map[pa]]&&r['AST M2 Name']!==m1M2[map[pa]]){r['AST M2 Name']=m1M2[map[pa]];m2Moved++}
+        // the mapping defines who belongs to a mapped M1: publishers not listed are taken out of that M1
+        if(!map[pa]&&mappedM1[oldM1]){r['AST M1 Name']='(Not in M1 mapping)';notIn++}
         if(pa&&!r['AST M2 Name']&&paM2[pa])r['AST M2 Name']=paM2[pa];
         if(pa&&!r['AST M1 Name']){
           // Also backfill empty M1 from other rows of same Publisher Alias
           var m1FromMap=map[pa];if(m1FromMap)r['AST M1 Name']=m1FromMap;
         }
       });
-      var msg='Loaded '+Object.keys(map).length+' mappings ('+matched+' matched); M2 updated on '+m2Moved+' rows.';
+      var msg='Loaded '+Object.keys(map).length+' mappings ('+matched+' matched); M2 updated on '+m2Moved+' rows; '+notIn+' rows under mapped M1s whose Publisher Alias is not in the mapping → (Not in M1 mapping).';
       if(unmatched.length){var uq=[];for(var i=0;i<unmatched.length;i++){if(uq.indexOf(unmatched[i])<0)uq.push(unmatched[i])}msg+=' Unmatched M1s: '+uq.join(', ')}
       document.getElementById('mappingStatus').textContent=msg;
       document.getElementById('mappingStatus').style.color=unmatched.length?'#D97706':'#059669';
