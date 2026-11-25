@@ -865,8 +865,8 @@ function renderMgmt(){
     mh+='</tbody></table></div>';
     // NCC vs OPT with proportions
     var tNcc=0,tOpt=0;regs.forEach(function(r){tNcc+=regData[r].no.ncc.del;tOpt+=regData[r].no.opt.del});var tAll=tNcc+tOpt;
-    var wC=' class="nwc"';var wTd=function(cur,prev){if(!prev)return'<td'+wC+'>—</td><td'+wC+'>—</td>';var w=(cur.adr-prev.adr)*1e4;return'<td'+wC+'>'+pct(prev.adr)+'</td><td'+wC+'><span class="'+bCls(w)+'">'+bStr(w)+'</span></td>'};
-    mh+='<div class="card" id="nccRecCard"'+(window._nccWow?'':' data-nowow="1"')+'><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">NCC vs OPT — Rec Level</h3>'+(hasWow?'<label style="font-size:.78em;color:#666;display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="nccWowTgl"'+(window._nccWow?' checked':'')+' style="accent-color:var(--r-apac)"> Show WoW ('+twWk+' vs '+lwWk+')</label>':'')+'</div><style>#nccRecCard[data-nowow] .nwc{display:none}</style><table><thead><tr><th>Region</th><th>Type</th><th>Delivered Recs</th><th>Implemented Recs</th><th>IR</th><th'+wC+'>LW IR</th><th'+wC+'>IR WoW</th><th>NCC/OPT</th><th>Region %</th></tr></thead><tbody>';
+    var wC=' class="nwc"';var wTd=function(cur,prev){if(!prev)return'<td'+wC+'>—</td><td'+wC+'>—</td><td'+wC+'>—</td><td'+wC+'>—</td>';var w=(cur.adr-prev.adr)*1e4,dd=cur.del-prev.del,dp=prev.del?dd/prev.del*100:null;return'<td'+wC+'>'+prev.del+'</td><td'+wC+'><span class="'+bCls(dd)+'">'+(dd>0?'▲ +':dd<0?'▼ ':'')+dd+(dp!==null?' ('+(dp>0?'+':'')+dp.toFixed(1)+'%)':'')+'</span></td><td'+wC+'>'+pct(prev.adr)+'</td><td'+wC+'><span class="'+bCls(w)+'">'+bStr(w)+'</span></td>'};
+    mh+='<div class="card" id="nccRecCard"'+(window._nccWow?'':' data-nowow="1"')+'><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">NCC vs OPT — Rec Level</h3>'+(hasWow?'<label style="font-size:.78em;color:#666;display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="nccWowTgl"'+(window._nccWow?' checked':'')+' style="accent-color:var(--r-apac)"> Show WoW ('+twWk+' vs '+lwWk+')</label>':'')+'</div><style>#nccRecCard[data-nowow] .nwc{display:none}</style><table><thead><tr><th>Region</th><th>Type</th><th>Delivered Recs</th><th>Implemented Recs</th><th>IR</th><th'+wC+'>LW Delivered</th><th'+wC+'>Delivered WoW</th><th'+wC+'>LW IR</th><th'+wC+'>IR WoW</th><th>NCC/OPT</th><th>Region %</th></tr></thead><tbody>';
     regs.forEach(function(reg){var d=regData[reg].no;var rt=d.ncc.del+d.opt.del;var np=rt>0?(d.ncc.del/rt*100).toFixed(0):'0';var op2=rt>0?(d.opt.del/rt*100).toFixed(0):'0';var rs=tAll>0?(rt/tAll*100).toFixed(1):'0';
       mh+='<tr><td>'+regSpan(reg)+'</td><td><span class="badge-ncc">NCC</span></td><td>'+d.ncc.del+'</td><td>'+d.ncc.adp+'</td><td>'+pct(d.ncc.adr)+'</td>'+wTd(d.ncc,regData[reg].lwNo&&regData[reg].lwNo.ncc)+'<td rowspan="2" style="text-align:center;vertical-align:middle"><span style="color:#6366F1;font-weight:700">'+np+'%</span> / <span style="color:#EA580C;font-weight:700">'+op2+'%</span></td><td rowspan="2" style="text-align:center;vertical-align:middle;font-weight:700">'+rs+'%</td></tr>';
       mh+='<tr><td>'+regSpan(reg)+'</td><td><span class="badge-opt">OPT</span></td><td>'+d.opt.del+'</td><td>'+d.opt.adp+'</td><td>'+pct(d.opt.adr)+'</td>'+wTd(d.opt,regData[reg].lwNo&&regData[reg].lwNo.opt)+'</tr>'});
@@ -1504,6 +1504,26 @@ function scGroup(list,fn){var g={};list.forEach(function(c){var k=fn(c);if(!g[k]
 function scIrBg(v){return v>=0.85?'#D1FAE5':v>=0.7?'#FEF3C7':'#FEE2E2'}
 function scBps(cur,prev){if(prev==null)return'<span style="color:#999">—</span>';var w=(cur-prev)*1e4;return'<span class="'+bCls(w)+'" style="font-weight:700">'+bStr(w)+'</span>'}
 function scToast(t){var d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999';document.body.appendChild(d);setTimeout(function(){d.remove()},2500)}
+// GPM M1 → GPM → AST login table for the selected weeks: weekly IR (colour-coded), cases, not implemented
+function scRenderGpm(){
+  var R=window._scLast,body=document.getElementById('scGpmBody');if(!R||!body)return;
+  var wl=function(k){return getWeek(pD(k))},sel=getMS('scGpmWk');
+  var keys=R.weeks.filter(function(k){return!sel.length||sel.indexOf(wl(k))>=0});
+  var list=R.all.filter(function(c){return keys.indexOf(c.wk)>=0});
+  var ord=function(a,b){return(b.n-b.a)-(a.n-a.a)||b.n-a.n};
+  var gm=scGroup(list,function(c){return c.gm1}).map(function(m){m.kids=scGroup(m.items,function(c){return c.gpm}).map(function(g){g.kids=scGroup(g.items,function(c){return c.sa||c.ast}).sort(ord);return g}).sort(ord);return m}).sort(ord);
+  var cell='padding:6px 8px;vertical-align:top',nw=cell+';white-space:nowrap',done=[];
+  var wkTd=function(g){return keys.map(function(k){var it=g.items.filter(function(c){return c.wk===k});if(!it.length)return'<td style="'+cell+';text-align:center;color:#ccc">—</td>';var x=scStat(it);return'<td title="'+x.a+'/'+x.n+'" style="'+cell+';text-align:center;background:'+scIrBg(x.ir)+'">'+pct(x.ir)+'</td>'}).join('')};
+  var h='<div style="font-size:.75em;color:#64748B;margin-bottom:6px">Weeks: '+(keys.map(wl).join(', ')||'—')+'</div><div style="overflow:auto"><table style="width:auto"><thead><tr><th style="'+nw+'">'+R.mLbl+'</th><th style="'+nw+'">'+R.gLbl+'</th>'+keys.map(function(k){return'<th style="'+nw+'">'+wl(k)+'</th>'}).join('')+'<th style="'+nw+'">Cases</th><th style="'+nw+'">Not Impl.</th><th style="'+nw+'">AST login (not impl. / total)</th></tr></thead><tbody>';
+  gm.forEach(function(m){var openG=m.kids.filter(function(g){return g.n>g.a});m.kids.forEach(function(g){if(g.n===g.a)done.push(g.k+' ('+g.n+')')});if(!openG.length)return;
+    openG.forEach(function(g,gi){var astOpen=g.kids.filter(function(x){return x.n>x.a});
+      h+='<tr>'+(gi===0?'<td rowspan="'+openG.length+'" style="'+nw+';background:#F1F5F9"><strong>'+scEsc(m.k)+'</strong><div style="font-size:.85em;color:#64748B;margin-top:2px">'+(m.n-m.a)+' not impl. / '+m.n+'</div></td>':'')+
+        '<td style="'+nw+'"><strong>'+scEsc(g.k)+'</strong></td>'+wkTd(g)+'<td style="'+nw+'">'+g.n+'</td><td style="'+cell+';color:var(--c-danger);font-weight:600">'+(g.n-g.a)+'</td>'+
+        '<td style="'+cell+'">'+astOpen.map(function(x){return scEsc(x.k)+' <span style="color:var(--c-danger);font-weight:600">'+(x.n-x.a)+'</span>/'+x.n}).join('<br>')+'</td></tr>'})});
+  h+='</tbody></table></div>'+(done.length?'<div style="margin-top:8px;font-size:.78em;color:var(--c-success)">✓ All implemented: '+scEsc(done.join(' · '))+'</div>':'');
+  if(!list.length)h='<p style="color:#999;font-size:.85em">No cases in the selected weeks</p>';
+  body.innerHTML=h;
+}
 function scSecHead(id,title,note,btn){return'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:20px 0 8px"><h4 style="margin:0">'+title+(note?' <span style="font-weight:400;font-size:.8em;color:#999">'+note+'</span>':'')+'</h4><span class="sc-noprint" style="display:flex;gap:6px"><button class="btn btn-v" style="font-size:.75em;padding:3px 10px" onclick="scCopyHtml([\''+id+'\'])">📋 Copy for email</button>'+(btn||'')+'</span></div>'}
 function runCollab(){
   var scope=scScope(),mode=document.getElementById('scMode').value,d0,d1,lbl,fileLbl;
@@ -1564,25 +1584,18 @@ function runCollab(){
   h+='<div class="sc-sec" id="scSecSt">'+scSecHead('scSecSt','By Sales Team','weekly IR, event total and change')+'<div style="height:'+Math.max(160,st.length*34+60)+'px;margin-bottom:10px"><canvas id="scStChart"></canvas></div><div style="overflow:auto"><table><thead><tr><th>Sales Team</th>'+wkHead+'<th>Cases</th><th>Impl.</th><th>Not Impl.</th><th>Event IR</th><th>Pre-event IR</th><th>vs Pre</th>'+(wkCols.length>1?'<th>Latest WoW</th>':'')+'</tr></thead><tbody>';
   st.forEach(function(g){h+='<tr><td><strong>'+scEsc(g.k)+'</strong></td>'+mtxCells(g)+'<td>'+g.n+'</td><td>'+g.a+'</td><td style="color:var(--c-danger);font-weight:600">'+(g.n-g.a)+'</td><td style="font-weight:700">'+pct(g.ir)+'</td><td>'+(g.b?pct(g.b.ir):'—')+'</td><td>'+scBps(g.ir,g.b?g.b.ir:null)+'</td>'+(wkCols.length>1?'<td>'+lastDelta(g)+'</td>':'')+'</tr>'});
   h+='<tr style="font-weight:700;background:#F8FAFC"><td>Total</td>'+wkCols.map(function(k){return'<td>'+pct(byWk[k].ir)+'</td>'}).join('')+'<td>'+tot.n+'</td><td>'+tot.a+'</td><td>'+(tot.n-tot.a)+'</td><td>'+pct(tot.ir)+'</td><td>'+(bt.n?pct(bt.ir):'—')+'</td><td>'+scBps(tot.ir,bt.n?bt.ir:null)+'</td>'+(wkCols.length>1?'<td>'+(latestWow!==null?scBps(byWk[lastW].ir,byWk[prevW].ir):'')+'</td>':'')+'</tr></tbody></table></div></div>';
-  // E. GPM rows — same table style as By Sales Team: weekly IR per GPM (colour-coded), M1 spans its GPMs, ASTs with open cases inline
-  var td=' style="padding:6px 8px;vertical-align:top"',tdn=' style="padding:6px 8px;vertical-align:top;white-space:nowrap"',done=[];
-  var wkTd=function(g){return wkCols.map(function(k){var x=g.w[k];return x?'<td title="'+x.a+'/'+x.n+'" style="padding:6px 8px;vertical-align:top;text-align:center;background:'+scIrBg(x.ir)+'">'+pct(x.ir)+'</td>':'<td style="padding:6px 8px;vertical-align:top;text-align:center;color:#ccc">—</td>'}).join('')};
-  h+='<div class="sc-sec" id="scSecGpm">'+scSecHead('scSecGpm','By '+mLbl+' → '+gLbl+' → AST','weekly IR of GPMs with open cases')+
-    '<div style="overflow:auto"><table style="width:auto"><thead><tr><th'+tdn+'>'+mLbl+'</th><th'+tdn+'>'+gLbl+'</th>'+wkCols.map(function(k){return'<th'+tdn+'>'+wkLbl(k)+'</th>'}).join('')+'<th'+tdn+'>Cases</th><th'+tdn+'>Open</th><th'+tdn+'>Event IR</th><th'+tdn+'>AST login (open / total)</th></tr></thead><tbody>';
-  gm.forEach(function(m){var openG=m.kids.filter(function(g){return g.n>g.a});m.kids.forEach(function(g){if(g.n===g.a)done.push(g.k+' ('+g.n+')')});if(!openG.length)return;
-    openG.forEach(function(g,gi){
-      var astOpen=(g.kids||[]).filter(function(x){return x.n>x.a});
-      h+='<tr>'+(gi===0?'<td rowspan="'+openG.length+'" style="padding:6px 8px;vertical-align:top;white-space:nowrap;background:#F1F5F9"><strong>'+scEsc(m.k)+'</strong><div style="font-size:.85em;color:#64748B;margin-top:2px">'+(m.n-m.a)+' open / '+m.n+' · <strong style="color:#0F172A">'+pct(m.ir)+'</strong></div></td>':'')+
-        '<td'+tdn+'><strong>'+scEsc(g.k)+'</strong></td>'+wkTd(g)+'<td'+tdn+'>'+g.n+'</td><td style="padding:6px 8px;vertical-align:top;color:var(--c-danger);font-weight:600">'+(g.n-g.a)+'</td>'+
-        '<td style="padding:6px 8px;vertical-align:top;font-weight:700;background:'+scIrBg(g.ir)+'">'+pct(g.ir)+'</td>'+
-        '<td'+td+'>'+astOpen.map(function(x){return scEsc(x.k)+' <span style="color:var(--c-danger);font-weight:600">'+(x.n-x.a)+'</span>/'+x.n}).join('<br>')+'</td></tr>'})});
-  h+='</tbody></table></div>'+(done.length?'<div style="margin-top:8px;font-size:.78em;color:var(--c-success)">✓ All implemented: '+scEsc(done.join(' · '))+'</div>':'')+'</div>';
+  // E. GPM → AST table — rendered by scRenderGpm for the weeks picked in its own dropdown (within the event period)
+  h+='<div class="sc-sec" id="scSecGpm">'+scSecHead('scSecGpm','By '+mLbl+' → '+gLbl+' → AST','pick the weeks to follow up')+'<div class="sc-noprint dd-filters" id="scGpmWkBox" style="margin-bottom:8px"></div><div id="scGpmBody"></div></div>';
   // F. Case list — filter by GPM login / AST login; exported as a standalone HTML for Sales / GPM
   h+='<div class="sc-sec" id="scSecOpen">'+scSecHead('scSecOpen','Not Implemented Cases ('+open.length+')','for Sales / GPM follow-up','<button class="btn btn-g" style="font-size:.75em;padding:3px 10px" onclick="scExportCasesHtml()">🌐 HTML</button>')+
     '<div style="margin-bottom:8px;font-size:.8em"><input id="scCaseQ" placeholder="Filter by GPM login or AST login…" style="'+SC_IN+';width:260px"> <span id="scCaseQn" style="color:#999"></span></div><div style="max-height:420px;overflow:auto"><table><thead><tr><th>'+mLbl+'</th><th>'+gLbl+'</th><th>GPM Login</th><th>AST</th><th>AST Login</th><th>Sales Team</th><th>Account</th><th>Case ID</th><th>Rec Bucket</th><th>Week</th></tr></thead><tbody id="scCaseBody">';
   open.forEach(function(c){h+='<tr data-q="'+scEsc([c.gl,c.sa,c.pa].join(' ').toLowerCase())+'"><td>'+scEsc(c.gm1)+'</td><td>'+scEsc(c.gpm)+'</td><td>'+scEsc(c.gl)+'</td><td>'+scEsc(c.ast)+'</td><td>'+scEsc(c.sa||c.pa)+'</td><td>'+scEsc(c.st)+'</td><td>'+scEsc(c.acct)+'</td><td style="font-size:.8em">'+scEsc(c.id)+'</td><td>'+scEsc(Object.keys(c.bk).join(' / '))+'</td><td>'+(c.wk?wkLbl(c.wk):'')+'</td></tr>'});
   h+='</tbody></table></div></div>';
   el.innerHTML=h;
+  var wkBox=document.getElementById('scGpmWkBox');wkBox.appendChild(createMS('scGpmWk','Weeks',weeks.map(wkLbl)));
+  // default: the latest week of the event period only
+  (function(){var wl=document.querySelector('#drop_scGpmWk .ms-list'),cbs=wl.querySelectorAll('input');for(var i=0;i<cbs.length;i++)cbs[i].checked=i===cbs.length-1;updBtn(document.querySelector('[data-id="scGpmWk"]'),wl)})();
+  document.querySelector('#drop_scGpmWk .ms-list').addEventListener('change',scRenderGpm);document.querySelector('#drop_scGpmWk .ms-actions').addEventListener('click',function(){setTimeout(scRenderGpm,0)});scRenderGpm();
   document.getElementById('scCaseQ').oninput=function(){var q=this.value.trim().toLowerCase(),trs=document.querySelectorAll('#scCaseBody tr'),n=0;for(var i=0;i<trs.length;i++){var ok=!q||(' '+trs[i].getAttribute('data-q')+' ').indexOf(' '+q+' ')>=0;trs[i].style.display=ok?'':'none';if(ok)n++}document.getElementById('scCaseQn').textContent=q?n+' case(s)':''};
 
   ['scWk','scSt','scGpm','scProg'].forEach(function(k){if(charts[k]){charts[k].destroy();charts[k]=null}});
